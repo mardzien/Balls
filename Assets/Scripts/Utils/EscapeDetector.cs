@@ -95,11 +95,11 @@ public class EscapeDetector : MonoBehaviour
     }
     
 #if UNITY_EDITOR
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         if (settings == null || ring == null) return;
         
-        // Rysuj próg ucieczki
+        // Rysuj próg ucieczki (tylko gdy zaznaczony)
         Gizmos.color = hasEscaped ? Color.red : Color.green;
         float escapeRadius = ring.GetRadius() + settings.escapeBuffer;
         

@@ -35,11 +35,11 @@ public class GameSettings : ScriptableObject
     public bool forceResolution = true;
     
     [Header("Ring Settings")]
-    [Tooltip("Promień pierścienia w jednostkach Unity (max ~5 dla 9:16)")]
-    public float ringRadius = 5f;
+    [Tooltip("Promień pierścienia w jednostkach Unity (4.5 = 80% szerokości ekranu)")]
+    public float ringRadius = 4.5f;
     
     [Tooltip("Grubość linii pierścienia")]
-    public float ringThickness = 0.2f;
+    public float ringThickness = 0.3f;
     
     [Tooltip("Kąt luki w stopniach (np. 30 = luka 30 stopni)")]
     [Range(10f, 90f)]
@@ -52,8 +52,8 @@ public class GameSettings : ScriptableObject
     public Color ringColor = Color.white;
     
     [Header("Ball Settings")]
-    [Tooltip("Promień kulki")]
-    public float ballRadius = 0.15f;
+    [Tooltip("Promień kulki (0.25 = dobrze widoczna)")]
+    public float ballRadius = 0.25f;
     
     [Tooltip("Współczynnik odbicia (0-1, gdzie 1 = idealne odbicie)")]
     [Range(0f, 1f)]
@@ -79,6 +79,6 @@ public class GameSettings : ScriptableObject
     
     [Header("Escape Detection")]
     [Tooltip("Dodatkowy bufor dla detekcji ucieczki (dodawany do promienia pierścienia)")]
-    public float escapeBuffer = 0.5f;
+    public float escapeBuffer = 0.6f;
 }
 

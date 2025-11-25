@@ -263,25 +263,6 @@ public class GameManager : MonoBehaviour
         }
     }
     
-#if UNITY_EDITOR
-    private void OnGUI()
-    {
-        // Prosty debug UI
-        GUILayout.BeginArea(new Rect(10, 10, 200, 100));
-        GUILayout.Label($"Round: {roundCount}");
-        GUILayout.Label($"State: {currentState}");
-        
-        if (currentState == GameState.GameOver)
-        {
-            GUILayout.Label($"Restart in: {restartTimer:F1}s");
-        }
-        
-        if (ball != null)
-        {
-            GUILayout.Label($"Ball distance: {ball.GetDistanceFromCenter():F2}");
-        }
-        GUILayout.EndArea();
-    }
-#endif
+    // Debug GUI usunięty - informacje w konsoli (Debug.Log)
 }
 

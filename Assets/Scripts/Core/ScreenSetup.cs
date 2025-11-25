@@ -11,7 +11,7 @@ public class ScreenSetup : MonoBehaviour
     [SerializeField] private Camera targetCamera;
     
     [Header("Debug")]
-    [SerializeField] private bool showDebugInfo = true;
+    [SerializeField] private bool showDebugInfo = false;
     
     private void Awake()
     {
@@ -105,9 +105,9 @@ public class ScreenSetup : MonoBehaviour
         GUILayout.EndArea();
     }
     
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
-        // Rysuj granice widoku kamery
+        // Rysuj granice widoku kamery (tylko gdy zaznaczony)
         float halfHeight = settings != null ? settings.cameraOrthoSize : 10f;
         float halfWidth = halfHeight * GameSettings.ASPECT_RATIO;
         

@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.Rendering;
+using UnityEngine.InputSystem;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -18,8 +18,8 @@ public class RecordingController : MonoBehaviour
     [Tooltip("Maksymalna długość nagrania w sekundach (0 = bez limitu)")]
     [SerializeField] private float maxRecordingDuration = 60f;
     
-    [Tooltip("Klawisz do rozpoczęcia/zakończenia nagrywania")]
-    [SerializeField] private KeyCode recordKey = KeyCode.F9;
+    [Tooltip("Klawisz do rozpoczęcia/zakończenia nagrywania (F9)")]
+    [SerializeField] private Key recordKey = Key.F9;
     
     [Tooltip("Folder docelowy dla nagrań (względem projektu)")]
     [SerializeField] private string outputFolder = "Recordings";
@@ -58,8 +58,9 @@ public class RecordingController : MonoBehaviour
     
     private void Update()
     {
-        // Toggle nagrywania klawiszem
-        if (Input.GetKeyDown(recordKey))
+        // Toggle nagrywania klawiszem (nowy Input System)
+        var keyboard = Keyboard.current;
+        if (keyboard != null && keyboard[recordKey].wasPressedThisFrame)
         {
             if (isRecording)
                 StopRecording();
@@ -241,7 +242,7 @@ public class RecordingController : MonoBehaviour
             style.fontSize = 12;
             style.normal.textColor = Color.gray;
             
-            GUI.Label(new Rect(10, 10, 200, 20), $"Press {recordKey} to record", style);
+            GUI.Label(new Rect(10, 10, 200, 20), $"Press F9 to record", style);
         }
     }
 #endif

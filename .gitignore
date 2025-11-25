@@ -10,8 +10,9 @@
 # Memory captures
 [Mm]emoryCaptures/
 
-# Recordings (video)
-[Rr]ecordings/
+# Recordings (video) - keep folder, ignore content
+[Rr]ecordings/*
+![Rr]ecordings/.gitkeep
 
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 !/[Aa]ssets/**/*.meta

@@ -12,16 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca18ce3dab7507a68a0aeea6de6b337d, type: 3}
   m_Name: GameConfig
   m_EditorClassIdentifier: Assembly-CSharp::GameSettings
-  ringRadius: 3
+  cameraOrthoSize: 10
+  forceResolution: 1
+  ringRadius: 4.5
   ringThickness: 0.2
-  gapAngleDegrees: 30
-  rotationSpeed: 45
+  gapAngleDegrees: 32.1
+  rotationSpeed: 100
   ringColor: {r: 1, g: 1, b: 1, a: 1}
-  ballRadius: 0.15
-  bounciness: 0.8
+  ballRadius: 0.3
+  bounciness: 1
   friction: 0.1
   ballColor: {r: 1, g: 0.3, b: 0.3, a: 1}
   gravity: -9.81
-  restartDelay: 1
+  restartDelay: 0
   ballSpawnOffset: {x: 0, y: 0}
-  escapeBuffer: 0.5
+  escapeBuffer: 0

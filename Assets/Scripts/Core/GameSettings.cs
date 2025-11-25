@@ -80,5 +80,34 @@ public class GameSettings : ScriptableObject
     [Header("Escape Detection")]
     [Tooltip("Dodatkowy bufor dla detekcji ucieczki (dodawany do promienia pierścienia)")]
     public float escapeBuffer = 0.6f;
+    
+    /// <summary>
+    /// Resetuje wszystkie wartości do zalecanych dla YouTube Shorts.
+    /// W Unity: PPM na asset -> "Reset to Recommended"
+    /// </summary>
+    [ContextMenu("Reset to Recommended Values")]
+    public void ResetToRecommended()
+    {
+        cameraOrthoSize = 10f;
+        ringRadius = 4.5f;
+        ringThickness = 0.3f;
+        gapAngleDegrees = 30f;
+        rotationSpeed = 45f;
+        ringColor = Color.white;
+        ballRadius = 0.25f;
+        bounciness = 0.8f;
+        friction = 0.1f;
+        ballColor = new Color(1f, 0.3f, 0.3f, 1f);
+        gravity = -9.81f;
+        restartDelay = 1f;
+        ballSpawnOffset = Vector2.zero;
+        escapeBuffer = 0.6f;
+        forceResolution = true;
+        
+        #if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+        Debug.Log("GameSettings: Zresetowano do zalecanych wartości dla YouTube Shorts!");
+        #endif
+    }
 }
 

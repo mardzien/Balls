@@ -6,9 +6,37 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "GameConfig", menuName = "Ball Engine/Game Settings")]
 public class GameSettings : ScriptableObject
 {
+    // =============================================
+    // STAŁE DLA YOUTUBE SHORTS (9:16)
+    // =============================================
+    
+    /// <summary>Szerokość w pikselach dla YouTube Shorts</summary>
+    public const int SCREEN_WIDTH = 1080;
+    
+    /// <summary>Wysokość w pikselach dla YouTube Shorts</summary>
+    public const int SCREEN_HEIGHT = 1920;
+    
+    /// <summary>Proporcja ekranu (9:16 = 0.5625)</summary>
+    public const float ASPECT_RATIO = 9f / 16f;
+    
+    /// <summary>Wysokość widoku kamery w jednostkach Unity (orthographicSize * 2)</summary>
+    public const float WORLD_HEIGHT = 20f;
+    
+    /// <summary>Szerokość widoku kamery w jednostkach Unity</summary>
+    public const float WORLD_WIDTH = WORLD_HEIGHT * ASPECT_RATIO; // = 11.25
+    
+    // =============================================
+    
+    [Header("Screen Settings")]
+    [Tooltip("Rozmiar kamery ortograficznej (połowa wysokości widoku)")]
+    public float cameraOrthoSize = 10f;
+    
+    [Tooltip("Wymuś rozdzielczość YouTube Shorts w buildzie")]
+    public bool forceResolution = true;
+    
     [Header("Ring Settings")]
-    [Tooltip("Promień pierścienia w jednostkach Unity")]
-    public float ringRadius = 3f;
+    [Tooltip("Promień pierścienia w jednostkach Unity (max ~5 dla 9:16)")]
+    public float ringRadius = 5f;
     
     [Tooltip("Grubość linii pierścienia")]
     public float ringThickness = 0.2f;

@@ -2,6 +2,9 @@
 UNITY BALL ENGINE - INSTRUKCJA SETUP
 ===================================
 
+ROZDZIELCZOŚĆ: 1080x1920 (YouTube Shorts, 9:16)
+WIDOK ŚWIATA: 11.25 x 20 jednostek Unity
+
 Po otwarciu projektu w Unity wykonaj następujące kroki:
 
 1. STWÓRZ GAME CONFIG ASSET
@@ -29,22 +32,47 @@ Po otwarciu projektu w Unity wykonaj następujące kroki:
       - Dodaj komponenty: SpriteRenderer, CircleCollider2D, Rigidbody2D, Ball
       - Dla SpriteRenderer ustaw Sprite na domyślny "Knob" lub stwórz własny okrągły sprite
 
-3. USTAWIENIA KAMERY
-   - Main Camera powinna być w trybie Orthographic
-   - Ustaw Size na około 5-6 aby widzieć cały pierścień
+3. USTAWIENIA KAMERY (automatyczne)
+   - Main Camera jest automatycznie konfigurowana przez GameManager
+   - Tryb: Orthographic
+   - Size: 10 (wysokość widoku = 20 jednostek)
    - Pozycja: (0, 0, -10)
+   - Tło: Czarne
 
-4. URUCHOM GRĘ
+4. GAME VIEW - CUSTOM RESOLUTION (ważne dla podglądu!)
+   - W oknie Game View kliknij dropdown z rozdzielczością
+   - Kliknij "+" aby dodać nową
+   - Wpisz: Label="YouTube Shorts", Type="Fixed Resolution"
+   - Width=1080, Height=1920
+   - Wybierz tę rozdzielczość z listy
+
+5. URUCHOM GRĘ
    - Naciśnij Play
    - Kulka powinna spadać i odbijać się od pierścienia
    - Gdy kulka ucieknie przez lukę - gra się zrestartuje
 
 ===================================
+WYMIARY ŚWIATA GRY (stałe w GameSettings.cs)
+===================================
+
+Rozdzielczość: 1080 x 1920 pikseli (YouTube Shorts)
+Proporcje: 9:16 (0.5625)
+Wysokość świata: 20 jednostek Unity
+Szerokość świata: 11.25 jednostek Unity
+Camera OrthoSize: 10 (połowa wysokości)
+
+PRZELICZNIK: 1 jednostka Unity = 96 pikseli
+
+===================================
 PARAMETRY DO DOSTOSOWANIA (GameConfig)
 ===================================
 
+Screen Settings:
+- Camera Ortho Size: Rozmiar kamery (domyślnie 10)
+- Force Resolution: Wymuś rozdzielczość w buildzie
+
 Ring Settings:
-- Ring Radius: Promień pierścienia (domyślnie 3)
+- Ring Radius: Promień pierścienia (domyślnie 5, max ~5.5 dla 9:16)
 - Ring Thickness: Grubość linii (domyślnie 0.2)
 - Gap Angle Degrees: Szerokość luki w stopniach (domyślnie 30)
 - Rotation Speed: Prędkość obrotu w stopniach/s (domyślnie 45)

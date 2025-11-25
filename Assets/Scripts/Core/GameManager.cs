@@ -16,6 +16,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Ring ring;
     [SerializeField] private Ball ball;
     [SerializeField] private EscapeDetector escapeDetector;
+    [SerializeField] private ScreenSetup screenSetup;
     
     private enum GameState
     {
@@ -74,6 +75,9 @@ public class GameManager : MonoBehaviour
         // Ustaw grawitację w Physics2D
         Physics2D.gravity = new Vector2(0, settings.gravity);
         
+        // Skonfiguruj ekran i kamerę dla YouTube Shorts (9:16)
+        SetupScreen();
+        
         // Stwórz lub znajdź Ring
         if (ring == null)
         {
@@ -117,6 +121,29 @@ public class GameManager : MonoBehaviour
         
         // Subskrybuj event odbicia (do przyszłych zastosowań)
         ball.OnBounce += OnBallBounce;
+    }
+    
+    private void SetupScreen()
+    {
+        // Dodaj ScreenSetup jeśli nie istnieje
+        if (screenSetup == null)
+        {
+            screenSetup = gameObject.GetComponent<ScreenSetup>();
+            if (screenSetup == null)
+            {
+                screenSetup = gameObject.AddComponent<ScreenSetup>();
+            }
+        }
+        
+        // Skonfiguruj kamerę
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null)
+        {
+            mainCamera.orthographic = true;
+            mainCamera.orthographicSize = settings.cameraOrthoSize;
+            mainCamera.transform.position = new Vector3(0, 0, -10);
+            mainCamera.backgroundColor = Color.black;
+        }
     }
     
     private Ring CreateRing()

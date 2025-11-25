@@ -1,0 +1,86 @@
+===================================
+UNITY BALL ENGINE - INSTRUKCJA SETUP
+===================================
+
+Po otwarciu projektu w Unity wykonaj następujące kroki:
+
+1. STWÓRZ GAME CONFIG ASSET
+   - PPM w folderze Assets/Settings
+   - Create -> Ball Engine -> Game Settings
+   - Nazwij plik "GameConfig"
+   - Dostosuj parametry według potrzeb
+
+2. PRZYGOTUJ SCENĘ (Assets/Scenes/SampleScene lub nowa)
+   
+   a) Stwórz pusty GameObject "GameManager":
+      - Dodaj komponent GameManager (Assets/Scripts/Core/GameManager.cs)
+      - Przypisz GameConfig do pola Settings
+      - Reszta zostanie stworzona automatycznie
+   
+   b) LUB stwórz ręcznie obiekty:
+      
+      Ring:
+      - Stwórz pusty GameObject "Ring"
+      - Dodaj komponenty: LineRenderer, EdgeCollider2D, Ring
+      - Przypisz GameConfig do pola Settings
+      
+      Ball:
+      - Stwórz pusty GameObject "Ball" 
+      - Dodaj komponenty: SpriteRenderer, CircleCollider2D, Rigidbody2D, Ball
+      - Dla SpriteRenderer ustaw Sprite na domyślny "Knob" lub stwórz własny okrągły sprite
+
+3. USTAWIENIA KAMERY
+   - Main Camera powinna być w trybie Orthographic
+   - Ustaw Size na około 5-6 aby widzieć cały pierścień
+   - Pozycja: (0, 0, -10)
+
+4. URUCHOM GRĘ
+   - Naciśnij Play
+   - Kulka powinna spadać i odbijać się od pierścienia
+   - Gdy kulka ucieknie przez lukę - gra się zrestartuje
+
+===================================
+PARAMETRY DO DOSTOSOWANIA (GameConfig)
+===================================
+
+Ring Settings:
+- Ring Radius: Promień pierścienia (domyślnie 3)
+- Ring Thickness: Grubość linii (domyślnie 0.2)
+- Gap Angle Degrees: Szerokość luki w stopniach (domyślnie 30)
+- Rotation Speed: Prędkość obrotu w stopniach/s (domyślnie 45)
+
+Ball Settings:
+- Ball Radius: Promień kulki (domyślnie 0.15)
+- Bounciness: Współczynnik odbicia 0-1 (domyślnie 0.8)
+- Friction: Tarcie 0-1 (domyślnie 0.1)
+
+Physics:
+- Gravity: Siła grawitacji (domyślnie -9.81)
+
+Game Loop:
+- Restart Delay: Opóźnienie przed restartem (domyślnie 1s)
+- Ball Spawn Offset: Pozycja startowa kulki (domyślnie 0,0)
+
+Escape Detection:
+- Escape Buffer: Bufor dla detekcji ucieczki (domyślnie 0.5)
+
+===================================
+ROZWIĄZYWANIE PROBLEMÓW
+===================================
+
+1. Kulka nie odbija się prawidłowo:
+   - Sprawdź czy EdgeCollider2D jest na obiekcie Ring
+   - Sprawdź Physics Material 2D (bounciness)
+
+2. Kulka przelatuje przez pierścień:
+   - Zwiększ Ring Thickness
+   - Zmniejsz Gravity lub Ball Radius
+   - Sprawdź Collision Detection Mode na Rigidbody2D (powinien być Continuous)
+
+3. Gra nie restartuje się:
+   - Sprawdź czy EscapeDetector jest aktywny
+   - Sprawdź escape_buffer w ustawieniach
+
+4. Pierścień nie jest widoczny:
+   - Sprawdź materiał na LineRenderer
+   - Sprawdź Ring Color w ustawieniach

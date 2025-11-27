@@ -16,13 +16,13 @@ MonoBehaviour:
   forceResolution: 1
   ringRadius: 4.5
   ringThickness: 0.2
-  gapAngleDegrees: 32.1
+  gapAngleDegrees: 30
   rotationSpeed: 100
-  ringColor: {r: 1, g: 1, b: 1, a: 1}
+  ringColor: {r: 1, g: 0, b: 0, a: 1}
   ballRadius: 0.3
   bounciness: 1
   friction: 0.1
-  ballColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  ballColor: {r: 0.098022126, g: 0.029903898, b: 0.9056604, a: 1}
   gravity: -9.81
   restartDelay: 0
   ballSpawnOffset: {x: 0, y: 0}

@@ -18,8 +18,7 @@ public class RecordingController : MonoBehaviour
     [Tooltip("Maksymalna długość nagrania w sekundach (0 = bez limitu)")]
     [SerializeField] private float maxRecordingDuration = 60f;
     
-    [Tooltip("Klawisz do rozpoczęcia/zakończenia nagrywania (F9)")]
-    [SerializeField] private Key recordKey = Key.F9;
+    // Klawisz F9 do nagrywania (hardcoded dla niezawodności)
     
     [Tooltip("Folder docelowy dla nagrań (względem projektu)")]
     [SerializeField] private string outputFolder = "Recordings";
@@ -58,9 +57,9 @@ public class RecordingController : MonoBehaviour
     
     private void Update()
     {
-        // Toggle nagrywania klawiszem (nowy Input System)
+        // Toggle nagrywania klawiszem F9 (nowy Input System)
         var keyboard = Keyboard.current;
-        if (keyboard != null && keyboard[recordKey].wasPressedThisFrame)
+        if (keyboard != null && keyboard.f9Key.wasPressedThisFrame)
         {
             if (isRecording)
                 StopRecording();
@@ -100,14 +99,14 @@ public class RecordingController : MonoBehaviour
         };
         
         // Encoder settings (Unity Recorder 5.x API)
-        // Domyślny encoder to Unity Media Encoder z MP4
+        // WebM dla kompatybilności z Linux
         movieRecorder.EncoderSettings = new UnityEditor.Recorder.Encoder.CoreEncoderSettings
         {
             EncodingQuality = UnityEditor.Recorder.Encoder.CoreEncoderSettings.VideoEncodingQuality.High,
-            Codec = UnityEditor.Recorder.Encoder.CoreEncoderSettings.OutputCodec.MP4
+            Codec = UnityEditor.Recorder.Encoder.CoreEncoderSettings.OutputCodec.WEBM
         };
         
-        // Ścieżka wyjściowa
+        // Ścieżka wyjściowa (WebM)
         string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         movieRecorder.OutputFile = System.IO.Path.Combine(
             Application.dataPath, 
@@ -115,6 +114,7 @@ public class RecordingController : MonoBehaviour
             outputFolder, 
             $"BallGame_{timestamp}"
         );
+        // Uwaga: rozszerzenie .webm zostanie dodane automatycznie przez Recorder
         
         // Audio
         movieRecorder.AudioInputSettings.PreserveAudio = true;

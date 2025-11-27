@@ -51,6 +51,9 @@ public class GameSettings : ScriptableObject
     [Tooltip("Kolor pierścienia")]
     public Color ringColor = Color.white;
     
+    [Tooltip("Przesunięcie pierścienia w dół (jednostki Unity)")]
+    public float ringVerticalOffset = -1.5f;
+    
     [Header("Ball Settings")]
     [Tooltip("Promień kulki (0.25 = dobrze widoczna)")]
     public float ballRadius = 0.25f;
@@ -63,19 +66,47 @@ public class GameSettings : ScriptableObject
     [Range(0f, 1f)]
     public float friction = 0.1f;
     
-    [Tooltip("Kolor kulki")]
+    [Tooltip("Domyślny kolor kulki (gdy useRandomBallColors = false)")]
     public Color ballColor = new Color(1f, 0.3f, 0.3f, 1f);
+    
+    [Header("Ball Freeze & Spawn")]
+    [Tooltip("Czas życia kulki przed zamrożeniem (sekundy)")]
+    public float ballFreezeTime = 3f;
+    
+    [Tooltip("Czy używać losowych jasnych kolorów dla kulek")]
+    public bool useRandomBallColors = true;
+    
+    [Tooltip("Minimalna jasność koloru kulki (HSV Value)")]
+    [Range(0.5f, 1f)]
+    public float ballColorMinBrightness = 0.8f;
+    
+    [Tooltip("Minimalne nasycenie koloru kulki (HSV Saturation)")]
+    [Range(0.5f, 1f)]
+    public float ballColorMinSaturation = 0.7f;
     
     [Header("Physics")]
     [Tooltip("Siła grawitacji (wartość ujemna = w dół)")]
     public float gravity = -9.81f;
     
     [Header("Game Loop")]
-    [Tooltip("Opóźnienie przed restartem po ucieczce kulki (sekundy)")]
-    public float restartDelay = 1f;
+    [Tooltip("Czas animacji końcowej przed restartem (sekundy)")]
+    public float gameOverAnimationDuration = 2f;
     
-    [Tooltip("Pozycja startowa kulki względem środka pierścienia")]
-    public Vector2 ballSpawnOffset = Vector2.zero;
+    [Tooltip("Czy automatycznie nagrywać")]
+    public bool autoRecording = true;
+    
+    [Header("Spawn Settings")]
+    [Tooltip("Minimalny kąt spawnu (stopnie, 0=prawo, 90=góra)")]
+    [Range(0f, 180f)]
+    public float spawnAngleMin = 45f;
+    
+    [Tooltip("Maksymalny kąt spawnu (stopnie)")]
+    [Range(0f, 180f)]
+    public float spawnAngleMax = 135f;
+    
+    [Tooltip("Odległość spawnu od środka (procent promienia)")]
+    [Range(0.1f, 0.9f)]
+    public float spawnRadiusPercent = 0.5f;
     
     [Header("Escape Detection")]
     [Tooltip("Dodatkowy bufor dla detekcji ucieczki (dodawany do promienia pierścienia)")]
@@ -88,25 +119,45 @@ public class GameSettings : ScriptableObject
     [ContextMenu("Reset to Recommended Values")]
     public void ResetToRecommended()
     {
+        // Screen
         cameraOrthoSize = 10f;
+        forceResolution = true;
+        
+        // Ring
         ringRadius = 4.5f;
         ringThickness = 0.3f;
         gapAngleDegrees = 30f;
         rotationSpeed = 45f;
         ringColor = Color.white;
+        ringVerticalOffset = -1.5f;
+        
+        // Ball
         ballRadius = 0.25f;
         bounciness = 0.8f;
         friction = 0.1f;
-        ballColor = new Color(1f, 0.3f, 0.3f, 1f);
+        ballFreezeTime = 3f;
+        useRandomBallColors = true;
+        ballColorMinBrightness = 0.8f;
+        ballColorMinSaturation = 0.7f;
+        
+        // Physics
         gravity = -9.81f;
-        restartDelay = 1f;
-        ballSpawnOffset = Vector2.zero;
+        
+        // Game Loop
+        gameOverAnimationDuration = 2f;
+        autoRecording = true;
+        
+        // Spawn
+        spawnAngleMin = 45f;
+        spawnAngleMax = 135f;
+        spawnRadiusPercent = 0.5f;
+        
+        // Escape
         escapeBuffer = 0.6f;
-        forceResolution = true;
         
         #if UNITY_EDITOR
         UnityEditor.EditorUtility.SetDirty(this);
-        Debug.Log("GameSettings: Zresetowano do zalecanych wartości dla YouTube Shorts!");
+        Debug.Log("GameSettings: Zresetowano do zalecanych wartości!");
         #endif
     }
 }

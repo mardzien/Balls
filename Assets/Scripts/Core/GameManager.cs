@@ -1,38 +1,52 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Główny manager gry - zarządza pętlą gry, spawnowaniem i restartami.
+/// Główny manager gry - zarządza pętlą gry, spawnowaniem kulek i sekwencją Game Over.
 /// </summary>
 public class GameManager : MonoBehaviour
 {
     [Header("Settings")]
     [SerializeField] private GameSettings settings;
     
-    [Header("Prefabs")]
-    [SerializeField] private GameObject ringPrefab;
-    [SerializeField] private GameObject ballPrefab;
-    
-    [Header("Scene References (optional - will be created if null)")]
+    [Header("Scene References")]
     [SerializeField] private Ring ring;
-    [SerializeField] private Ball ball;
-    [SerializeField] private EscapeDetector escapeDetector;
-    [SerializeField] private ScreenSetup screenSetup;
+    [SerializeField] private RecordingController recordingController;
+    
+    // Lista wszystkich kulek (aktywne i zamrożone)
+    private List<Ball> allBalls = new List<Ball>();
+    private Ball activeBall; // Aktualnie aktywna (niezamrożona) kulka
     
     private enum GameState
     {
         Playing,
         GameOver,
+        GameOverAnimation,
         Restarting
     }
     
     private GameState currentState = GameState.Playing;
-    private float restartTimer = 0f;
+    private float gameOverTimer = 0f;
     private int roundCount = 0;
+    
+    // Event do komunikacji z efektami końcowymi
+    public event System.Action OnGameOverStart;
+    public event System.Action OnGameRestart;
     
     /// <summary>
     /// Aktualny numer rundy.
     /// </summary>
     public int RoundCount => roundCount;
+    
+    /// <summary>
+    /// Wszystkie kulki w grze.
+    /// </summary>
+    public IReadOnlyList<Ball> AllBalls => allBalls;
+    
+    /// <summary>
+    /// Czy gra jest w trakcie animacji końcowej.
+    /// </summary>
+    public bool IsGameOver => currentState == GameState.GameOver || currentState == GameState.GameOverAnimation;
     
     private void Start()
     {
@@ -51,13 +65,13 @@ public class GameManager : MonoBehaviour
         switch (currentState)
         {
             case GameState.Playing:
-                // Gra trwa - logika w EscapeDetector
+                CheckForEscape();
                 break;
                 
             case GameState.GameOver:
-                // Czekaj na restart
-                restartTimer -= Time.deltaTime;
-                if (restartTimer <= 0f)
+            case GameState.GameOverAnimation:
+                gameOverTimer -= Time.deltaTime;
+                if (gameOverTimer <= 0f)
                 {
                     currentState = GameState.Restarting;
                     StartNewRound();
@@ -65,7 +79,6 @@ public class GameManager : MonoBehaviour
                 break;
                 
             case GameState.Restarting:
-                // Przejściowy stan podczas restartu
                 break;
         }
     }
@@ -75,74 +88,17 @@ public class GameManager : MonoBehaviour
         // Ustaw grawitację w Physics2D
         Physics2D.gravity = new Vector2(0, settings.gravity);
         
-        // Skonfiguruj ekran i kamerę dla YouTube Shorts (9:16)
-        SetupScreen();
-        
         // Stwórz lub znajdź Ring
         if (ring == null)
         {
-            if (ringPrefab != null)
-            {
-                GameObject ringObj = Instantiate(ringPrefab, Vector3.zero, Quaternion.identity);
-                ringObj.name = "Ring";
-                ring = ringObj.GetComponent<Ring>();
-            }
-            else
-            {
-                ring = CreateRing();
-            }
+            ring = CreateRing();
         }
         ring.Initialize(settings);
         
-        // Stwórz lub znajdź Ball
-        if (ball == null)
+        // Znajdź RecordingController
+        if (recordingController == null)
         {
-            if (ballPrefab != null)
-            {
-                Vector3 spawnPos = new Vector3(settings.ballSpawnOffset.x, settings.ballSpawnOffset.y, 0);
-                GameObject ballObj = Instantiate(ballPrefab, spawnPos, Quaternion.identity);
-                ballObj.name = "Ball";
-                ball = ballObj.GetComponent<Ball>();
-            }
-            else
-            {
-                ball = CreateBall();
-            }
-        }
-        ball.Initialize(settings);
-        
-        // Stwórz lub znajdź EscapeDetector
-        if (escapeDetector == null)
-        {
-            escapeDetector = gameObject.AddComponent<EscapeDetector>();
-        }
-        escapeDetector.Initialize(settings, ring, ball);
-        escapeDetector.OnBallEscaped += OnBallEscaped;
-        
-        // Subskrybuj event odbicia (do przyszłych zastosowań)
-        ball.OnBounce += OnBallBounce;
-    }
-    
-    private void SetupScreen()
-    {
-        // Dodaj ScreenSetup jeśli nie istnieje
-        if (screenSetup == null)
-        {
-            screenSetup = gameObject.GetComponent<ScreenSetup>();
-            if (screenSetup == null)
-            {
-                screenSetup = gameObject.AddComponent<ScreenSetup>();
-            }
-        }
-        
-        // Skonfiguruj kamerę
-        Camera mainCamera = Camera.main;
-        if (mainCamera != null)
-        {
-            mainCamera.orthographic = true;
-            mainCamera.orthographicSize = settings.cameraOrthoSize;
-            mainCamera.transform.position = new Vector3(0, 0, -10);
-            mainCamera.backgroundColor = Color.black;
+            recordingController = GetComponent<RecordingController>();
         }
     }
     
@@ -155,28 +111,143 @@ public class GameManager : MonoBehaviour
         return ringComponent;
     }
     
-    private Ball CreateBall()
+    private void StartNewRound()
     {
-        GameObject ballObj = new GameObject("Ball");
+        roundCount++;
+        Debug.Log($"[Game] Starting round {roundCount}");
+        
+        // Wyczyść wszystkie stare kulki
+        ClearAllBalls();
+        
+        // Reset pierścienia
+        ring.ResetRotation();
+        ring.SetColor(settings.ringColor);
+        
+        // Spawn pierwszą kulkę
+        SpawnNewBall();
+        
+        // Zmień stan na Playing
+        currentState = GameState.Playing;
+        
+        // Auto-start nagrywania
+        if (settings.autoRecording && recordingController != null && !recordingController.IsRecording)
+        {
+            recordingController.StartRecording();
+        }
+        
+        OnGameRestart?.Invoke();
+    }
+    
+    private void SpawnNewBall()
+    {
+        // Stwórz nową kulkę
+        GameObject ballObj = new GameObject($"Ball_{allBalls.Count}");
         
         // Dodaj komponenty
         SpriteRenderer sr = ballObj.AddComponent<SpriteRenderer>();
         ballObj.AddComponent<CircleCollider2D>();
         ballObj.AddComponent<Rigidbody2D>();
-        Ball ballComponent = ballObj.AddComponent<Ball>();
+        Ball ball = ballObj.AddComponent<Ball>();
         
-        // Stwórz prosty sprite koła
+        // Stwórz sprite koła
         sr.sprite = CreateCircleSprite();
         
-        // Ustaw pozycję
-        ballObj.transform.position = new Vector3(settings.ballSpawnOffset.x, settings.ballSpawnOffset.y, 0);
+        // Inicjalizuj kulkę
+        ball.Initialize(settings, settings.useRandomBallColors);
         
-        return ballComponent;
+        // Ustaw pozycję (losową w górnej części pierścienia)
+        Vector2 spawnPos = ring.GetRandomSpawnPosition();
+        ball.transform.position = new Vector3(spawnPos.x, spawnPos.y, 0);
+        
+        // Subskrybuj eventy
+        ball.OnFrozen += OnBallFrozen;
+        ball.OnBounce += OnBallBounce;
+        
+        // Dodaj do listy
+        allBalls.Add(ball);
+        activeBall = ball;
+        
+        Debug.Log($"[Game] Spawned ball at {spawnPos}");
+    }
+    
+    private void OnBallFrozen(Ball frozenBall)
+    {
+        if (currentState != GameState.Playing) return;
+        
+        Debug.Log($"[Game] Ball frozen, spawning new one");
+        
+        // Spawn nową kulkę
+        SpawnNewBall();
+    }
+    
+    private void OnBallBounce()
+    {
+        // Tu można dodać efekty/dźwięki przy odbiciach
+    }
+    
+    private void CheckForEscape()
+    {
+        if (activeBall == null || activeBall.IsFrozen) return;
+        
+        Vector2 ringCenter = ring.Center;
+        float distance = activeBall.GetDistanceFromCenter(ringCenter);
+        float escapeThreshold = ring.InnerRadius + settings.escapeBuffer;
+        
+        if (distance > escapeThreshold)
+        {
+            float ballAngle = activeBall.GetAngleFromCenter(ringCenter);
+            
+            if (ring.IsInGap(ballAngle))
+            {
+                // Kulka uciekła przez lukę!
+                Debug.Log($"[Game] Ball escaped! Distance: {distance:F2}, Angle: {ballAngle:F1}°");
+                TriggerGameOver();
+            }
+            else
+            {
+                // Kulka jest poza pierścieniem ale NIE przez lukę (błąd fizyki)
+                Debug.LogWarning($"[Game] Ball escaped outside gap! Distance: {distance:F2}, Angle: {ballAngle:F1}°");
+                TriggerGameOver();
+            }
+        }
+    }
+    
+    private void TriggerGameOver()
+    {
+        if (currentState != GameState.Playing) return;
+        
+        currentState = GameState.GameOver;
+        gameOverTimer = settings.gameOverAnimationDuration;
+        
+        Debug.Log($"[Game] Game Over! Round {roundCount} ended. Animation for {settings.gameOverAnimationDuration}s...");
+        
+        // Wywołaj event dla efektów końcowych
+        OnGameOverStart?.Invoke();
+        
+        // Odmróź aktywną kulkę żeby mogła spaść
+        if (activeBall != null && !activeBall.IsFrozen)
+        {
+            // Kulka już jest odmrożona, niech spada
+        }
+    }
+    
+    private void ClearAllBalls()
+    {
+        foreach (var ball in allBalls)
+        {
+            if (ball != null)
+            {
+                ball.OnFrozen -= OnBallFrozen;
+                ball.OnBounce -= OnBallBounce;
+                Destroy(ball.gameObject);
+            }
+        }
+        allBalls.Clear();
+        activeBall = null;
     }
     
     private Sprite CreateCircleSprite()
     {
-        // Stwórz prostą teksturę koła
         int size = 64;
         Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
         
@@ -213,56 +284,19 @@ public class GameManager : MonoBehaviour
         );
     }
     
-    private void StartNewRound()
-    {
-        roundCount++;
-        Debug.Log($"Starting round {roundCount}");
-        
-        // Reset pozycji kulki
-        Vector2 spawnPosition = settings.ballSpawnOffset;
-        ball.ResetBall(spawnPosition);
-        
-        // Reset pierścienia (opcjonalnie)
-        ring.ResetRotation();
-        
-        // Reset detektora
-        escapeDetector.Reset();
-        
-        // Zmień stan na Playing
-        currentState = GameState.Playing;
-    }
-    
-    private void OnBallEscaped()
-    {
-        if (currentState != GameState.Playing)
-            return;
-        
-        Debug.Log($"Game Over! Round {roundCount} ended. Restarting in {settings.restartDelay}s...");
-        
-        currentState = GameState.GameOver;
-        restartTimer = settings.restartDelay;
-    }
-    
-    private void OnBallBounce()
-    {
-        // Tu można dodać logikę dla odbić (dźwięki, efekty, liczniki)
-        // Debug.Log("Ball bounced!");
-    }
-    
     private void OnDestroy()
     {
-        // Odsubskrybuj eventy
-        if (escapeDetector != null)
-        {
-            escapeDetector.OnBallEscaped -= OnBallEscaped;
-        }
-        
-        if (ball != null)
-        {
-            ball.OnBounce -= OnBallBounce;
-        }
+        ClearAllBalls();
     }
     
-    // Debug GUI usunięty - informacje w konsoli (Debug.Log)
+    /// <summary>
+    /// Zatrzymuje nagrywanie (wywoływane przez efekty końcowe).
+    /// </summary>
+    public void StopRecordingIfNeeded()
+    {
+        if (settings.autoRecording && recordingController != null && recordingController.IsRecording)
+        {
+            recordingController.StopRecording();
+        }
+    }
 }
-

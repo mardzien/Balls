@@ -2,6 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Kulka z fizyką 2D - spada pod wpływem grawitacji i odbija się od pierścienia.
+/// Po określonym czasie zamraża się (staje statyczna).
 /// </summary>
 [RequireComponent(typeof(CircleCollider2D))]
 [RequireComponent(typeof(Rigidbody2D))]
@@ -13,10 +14,35 @@ public class Ball : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private GameSettings settings;
     
+    // Freeze system
+    private float lifeTimer = 0f;
+    private bool isFrozen = false;
+    private Color ballColor;
+    
     /// <summary>
     /// Event wywoływany przy kolizji z pierścieniem.
     /// </summary>
     public event System.Action OnBounce;
+    
+    /// <summary>
+    /// Event wywoływany gdy kulka się zamrozi.
+    /// </summary>
+    public event System.Action<Ball> OnFrozen;
+    
+    /// <summary>
+    /// Czy kulka jest zamrożona.
+    /// </summary>
+    public bool IsFrozen => isFrozen;
+    
+    /// <summary>
+    /// Pozostały czas do zamrożenia.
+    /// </summary>
+    public float TimeRemaining => settings != null ? Mathf.Max(0, settings.ballFreezeTime - lifeTimer) : 0f;
+    
+    /// <summary>
+    /// Kolor tej kulki.
+    /// </summary>
+    public Color BallColor => ballColor;
     
     private void Awake()
     {
@@ -25,19 +51,35 @@ public class Ball : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
     
+    private void Update()
+    {
+        if (isFrozen || settings == null) return;
+        
+        // Licznik czasu życia
+        lifeTimer += Time.deltaTime;
+        
+        // Sprawdź czy czas na zamrożenie
+        if (lifeTimer >= settings.ballFreezeTime)
+        {
+            Freeze();
+        }
+    }
+    
     /// <summary>
     /// Inicjalizuje kulkę z podanymi ustawieniami.
     /// </summary>
-    public void Initialize(GameSettings gameSettings)
+    public void Initialize(GameSettings gameSettings, bool randomColor = true)
     {
         settings = gameSettings;
+        isFrozen = false;
+        lifeTimer = 0f;
         
         if (rb == null) rb = GetComponent<Rigidbody2D>();
         if (circleCollider == null) circleCollider = GetComponent<CircleCollider2D>();
         if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
         
         SetupPhysics();
-        SetupVisuals();
+        SetupVisuals(randomColor);
     }
     
     private void SetupPhysics()
@@ -46,7 +88,8 @@ public class Ball : MonoBehaviour
         circleCollider.radius = settings.ballRadius;
         
         // Konfiguracja Rigidbody2D
-        rb.gravityScale = settings.gravity / -9.81f; // Normalizuj względem domyślnej grawitacji Unity
+        rb.bodyType = RigidbodyType2D.Dynamic;
+        rb.gravityScale = settings.gravity / -9.81f;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
         
@@ -63,15 +106,82 @@ public class Ball : MonoBehaviour
         rb.angularVelocity = 0f;
     }
     
-    private void SetupVisuals()
+    private void SetupVisuals(bool randomColor)
     {
         // Ustaw skalę sprite'a na podstawie promienia
-        // Domyślny sprite Circle ma średnicę 1, więc skalujemy do 2*radius
         float diameter = settings.ballRadius * 2f;
         transform.localScale = new Vector3(diameter, diameter, 1f);
         
         // Ustaw kolor
-        spriteRenderer.color = settings.ballColor;
+        if (randomColor && settings.useRandomBallColors)
+        {
+            ballColor = GenerateRandomBrightColor();
+        }
+        else
+        {
+            ballColor = settings.ballColor;
+        }
+        spriteRenderer.color = ballColor;
+    }
+    
+    /// <summary>
+    /// Generuje losowy jasny kolor.
+    /// </summary>
+    private Color GenerateRandomBrightColor()
+    {
+        float hue = Random.Range(0f, 1f);
+        float saturation = Random.Range(settings.ballColorMinSaturation, 1f);
+        float value = Random.Range(settings.ballColorMinBrightness, 1f);
+        
+        return Color.HSVToRGB(hue, saturation, value);
+    }
+    
+    /// <summary>
+    /// Zamraża kulkę - zatrzymuje fizykę.
+    /// </summary>
+    public void Freeze()
+    {
+        if (isFrozen) return;
+        
+        isFrozen = true;
+        
+        // Zatrzymaj fizykę
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+            rb.bodyType = RigidbodyType2D.Static;
+        }
+        
+        // Lekko przyciemnij kolor zamrożonej kulki
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = ballColor * 0.8f;
+            spriteRenderer.color = new Color(spriteRenderer.color.r, spriteRenderer.color.g, spriteRenderer.color.b, 1f);
+        }
+        
+        OnFrozen?.Invoke(this);
+    }
+    
+    /// <summary>
+    /// Odmraża kulkę - przywraca fizykę.
+    /// </summary>
+    public void Unfreeze()
+    {
+        if (!isFrozen) return;
+        
+        isFrozen = false;
+        lifeTimer = 0f;
+        
+        if (rb != null)
+        {
+            rb.bodyType = RigidbodyType2D.Dynamic;
+        }
+        
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = ballColor;
+        }
     }
     
     /// <summary>
@@ -80,20 +190,31 @@ public class Ball : MonoBehaviour
     public void ResetBall(Vector2 position)
     {
         transform.position = new Vector3(position.x, position.y, 0f);
+        isFrozen = false;
+        lifeTimer = 0f;
         
         if (rb != null)
         {
+            rb.bodyType = RigidbodyType2D.Dynamic;
             rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0f;
         }
     }
     
     /// <summary>
-    /// Zwraca aktualną pozycję kulki.
+    /// Zwraca aktualną pozycję kulki (względem Ring center).
     /// </summary>
     public Vector2 GetPosition()
     {
         return transform.position;
+    }
+    
+    /// <summary>
+    /// Ustawia pozycję kulki względem podanego centrum.
+    /// </summary>
+    public void SetPositionRelativeTo(Vector2 center, Vector2 offset)
+    {
+        transform.position = new Vector3(center.x + offset.x, center.y + offset.y, 0f);
     }
     
     /// <summary>
@@ -105,41 +226,38 @@ public class Ball : MonoBehaviour
     }
     
     /// <summary>
-    /// Oblicza kąt pozycji kulki względem środka (0,0) w stopniach.
+    /// Oblicza kąt pozycji kulki względem podanego centrum w stopniach.
     /// </summary>
-    public float GetAngleFromCenter()
+    public float GetAngleFromCenter(Vector2 center)
     {
-        Vector2 pos = GetPosition();
-        float angle = Mathf.Atan2(pos.y, pos.x) * Mathf.Rad2Deg;
-        return angle;
+        Vector2 pos = (Vector2)transform.position - center;
+        return Mathf.Atan2(pos.y, pos.x) * Mathf.Rad2Deg;
     }
     
     /// <summary>
-    /// Oblicza odległość kulki od środka.
+    /// Oblicza odległość kulki od podanego centrum.
     /// </summary>
-    public float GetDistanceFromCenter()
+    public float GetDistanceFromCenter(Vector2 center)
     {
-        return GetPosition().magnitude;
+        return ((Vector2)transform.position - center).magnitude;
     }
+    
+    // Legacy methods for compatibility
+    public float GetAngleFromCenter() => GetAngleFromCenter(Vector2.zero);
+    public float GetDistanceFromCenter() => GetDistanceFromCenter(Vector2.zero);
     
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        // Wywołaj event przy kolizji (do logowania/dźwięków w przyszłości)
+        if (isFrozen) return;
         OnBounce?.Invoke();
     }
     
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        // Rysuj kierunek do środka
-        Gizmos.color = Color.cyan;
+        Gizmos.color = isFrozen ? Color.blue : Color.cyan;
         Vector2 pos = transform.position;
         Gizmos.DrawLine(pos, Vector2.zero);
-        
-        // Pokaż kąt
-        float angle = GetAngleFromCenter();
-        UnityEditor.Handles.Label(transform.position + Vector3.up * 0.3f, $"Angle: {angle:F1}°");
     }
 #endif
 }
-

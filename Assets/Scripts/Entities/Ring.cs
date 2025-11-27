@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Pierścień z luką - obraca się i ma kolizję dla kulki.
 /// Używa LineRenderer do wizualizacji i EdgeCollider2D do fizyki.
+/// Kolizja jest na wewnętrznej krawędzi pierścienia.
 /// </summary>
 [RequireComponent(typeof(LineRenderer))]
 [RequireComponent(typeof(EdgeCollider2D))]
@@ -23,14 +24,29 @@ public class Ring : MonoBehaviour
     public float CurrentAngle { get; private set; }
     
     /// <summary>
+    /// Pozycja środka pierścienia w świecie.
+    /// </summary>
+    public Vector2 Center => transform.position;
+    
+    /// <summary>
+    /// Wewnętrzny promień pierścienia (dla kolizji).
+    /// </summary>
+    public float InnerRadius => settings != null ? settings.ringRadius - settings.ringThickness / 2f : 3f;
+    
+    /// <summary>
+    /// Zewnętrzny promień pierścienia.
+    /// </summary>
+    public float OuterRadius => settings != null ? settings.ringRadius + settings.ringThickness / 2f : 3.5f;
+    
+    /// <summary>
     /// Kąt początku luki w stopniach (względem aktualnej rotacji).
     /// </summary>
-    public float GapStartAngle => CurrentAngle - settings.gapAngleDegrees / 2f;
+    public float GapStartAngle => 90f + CurrentAngle - settings.gapAngleDegrees / 2f;
     
     /// <summary>
     /// Kąt końca luki w stopniach (względem aktualnej rotacji).
     /// </summary>
-    public float GapEndAngle => CurrentAngle + settings.gapAngleDegrees / 2f;
+    public float GapEndAngle => 90f + CurrentAngle + settings.gapAngleDegrees / 2f;
     
     private void Awake()
     {
@@ -46,6 +62,7 @@ public class Ring : MonoBehaviour
             return;
         }
         
+        SetupPosition();
         SetupLineRenderer();
         GenerateRing();
     }
@@ -70,8 +87,15 @@ public class Ring : MonoBehaviour
         if (lineRenderer == null) lineRenderer = GetComponent<LineRenderer>();
         if (edgeCollider == null) edgeCollider = GetComponent<EdgeCollider2D>();
         
+        SetupPosition();
         SetupLineRenderer();
         GenerateRing();
+    }
+    
+    private void SetupPosition()
+    {
+        // Ustaw pozycję pierścienia (z offsetem pionowym)
+        transform.position = new Vector3(0, settings.ringVerticalOffset, 0);
     }
     
     private void SetupLineRenderer()
@@ -97,22 +121,33 @@ public class Ring : MonoBehaviour
         float arcAngle = 360f - settings.gapAngleDegrees;
         int segments = Mathf.Max(32, Mathf.RoundToInt(arcAngle * SEGMENTS_PER_DEGREE));
         
-        // Punkty dla LineRenderer i EdgeCollider
+        // Punkty dla LineRenderer (na środkowym promieniu)
         Vector3[] linePoints = new Vector3[segments + 1];
+        
+        // Punkty dla EdgeCollider (na WEWNĘTRZNEJ krawędzi!)
         Vector2[] colliderPoints = new Vector2[segments + 1];
         
+        // Wewnętrzny promień dla kolizji
+        float collisionRadius = InnerRadius;
+        
         // Rozpocznij od połowy luki (luka będzie na górze w pozycji startowej)
-        float startAngle = settings.gapAngleDegrees / 2f;
+        // Kąt 90 stopni = góra
+        float startAngle = 90f + settings.gapAngleDegrees / 2f;
         float angleStep = arcAngle / segments;
         
         for (int i = 0; i <= segments; i++)
         {
             float angle = (startAngle + i * angleStep) * Mathf.Deg2Rad;
-            float x = Mathf.Cos(angle) * settings.ringRadius;
-            float y = Mathf.Sin(angle) * settings.ringRadius;
             
-            linePoints[i] = new Vector3(x, y, 0);
-            colliderPoints[i] = new Vector2(x, y);
+            // LineRenderer - na środkowym promieniu
+            float lx = Mathf.Cos(angle) * settings.ringRadius;
+            float ly = Mathf.Sin(angle) * settings.ringRadius;
+            linePoints[i] = new Vector3(lx, ly, 0);
+            
+            // EdgeCollider - na WEWNĘTRZNEJ krawędzi
+            float cx = Mathf.Cos(angle) * collisionRadius;
+            float cy = Mathf.Sin(angle) * collisionRadius;
+            colliderPoints[i] = new Vector2(cx, cy);
         }
         
         lineRenderer.positionCount = linePoints.Length;
@@ -141,11 +176,28 @@ public class Ring : MonoBehaviour
     }
     
     /// <summary>
-    /// Zwraca promień pierścienia.
+    /// Zwraca promień pierścienia (środkowy).
     /// </summary>
     public float GetRadius()
     {
         return settings != null ? settings.ringRadius : 3f;
+    }
+    
+    /// <summary>
+    /// Generuje losową pozycję spawnu wewnątrz pierścienia (górna część).
+    /// </summary>
+    public Vector2 GetRandomSpawnPosition()
+    {
+        // Losowy kąt w górnej części (między spawnAngleMin a spawnAngleMax)
+        float angle = Random.Range(settings.spawnAngleMin, settings.spawnAngleMax) * Mathf.Deg2Rad;
+        
+        // Losowa odległość od środka
+        float distance = InnerRadius * settings.spawnRadiusPercent;
+        
+        float x = Center.x + Mathf.Cos(angle) * distance;
+        float y = Center.y + Mathf.Sin(angle) * distance;
+        
+        return new Vector2(x, y);
     }
     
     /// <summary>
@@ -157,14 +209,36 @@ public class Ring : MonoBehaviour
         transform.rotation = Quaternion.identity;
     }
     
+    /// <summary>
+    /// Ustawia kolor pierścienia.
+    /// </summary>
+    public void SetColor(Color color)
+    {
+        if (lineRenderer != null)
+        {
+            lineRenderer.startColor = color;
+            lineRenderer.endColor = color;
+            if (lineRenderer.material != null)
+            {
+                lineRenderer.material.color = color;
+            }
+        }
+    }
+    
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
         if (settings == null) return;
         
-        // Rysuj promień pierścienia
+        Vector3 center = transform.position;
+        
+        // Rysuj zewnętrzny promień
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, settings.ringRadius);
+        DrawWireCircle(center, settings.ringRadius + settings.ringThickness / 2f);
+        
+        // Rysuj wewnętrzny promień (kolizja)
+        Gizmos.color = Color.green;
+        DrawWireCircle(center, settings.ringRadius - settings.ringThickness / 2f);
         
         // Rysuj obszar luki
         Gizmos.color = Color.red;
@@ -174,9 +248,34 @@ public class Ring : MonoBehaviour
         Vector3 startDir = new Vector3(Mathf.Cos(gapStart), Mathf.Sin(gapStart), 0);
         Vector3 endDir = new Vector3(Mathf.Cos(gapEnd), Mathf.Sin(gapEnd), 0);
         
-        Gizmos.DrawLine(transform.position, transform.position + startDir * settings.ringRadius);
-        Gizmos.DrawLine(transform.position, transform.position + endDir * settings.ringRadius);
+        Gizmos.DrawLine(center, center + startDir * settings.ringRadius);
+        Gizmos.DrawLine(center, center + endDir * settings.ringRadius);
+        
+        // Rysuj obszar spawnu
+        Gizmos.color = Color.cyan;
+        float spawnRadius = (settings.ringRadius - settings.ringThickness / 2f) * settings.spawnRadiusPercent;
+        float minAngle = settings.spawnAngleMin * Mathf.Deg2Rad;
+        float maxAngle = settings.spawnAngleMax * Mathf.Deg2Rad;
+        
+        Vector3 minDir = new Vector3(Mathf.Cos(minAngle), Mathf.Sin(minAngle), 0);
+        Vector3 maxDir = new Vector3(Mathf.Cos(maxAngle), Mathf.Sin(maxAngle), 0);
+        
+        Gizmos.DrawLine(center, center + minDir * spawnRadius);
+        Gizmos.DrawLine(center, center + maxDir * spawnRadius);
+    }
+    
+    private void DrawWireCircle(Vector3 center, float radius, int segments = 64)
+    {
+        float angleStep = 360f / segments;
+        Vector3 prevPoint = center + new Vector3(radius, 0, 0);
+        
+        for (int i = 1; i <= segments; i++)
+        {
+            float angle = i * angleStep * Mathf.Deg2Rad;
+            Vector3 point = center + new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0);
+            Gizmos.DrawLine(prevPoint, point);
+            prevPoint = point;
+        }
     }
 #endif
 }
-

@@ -19,11 +19,19 @@ MonoBehaviour:
   gapAngleDegrees: 30
   rotationSpeed: 100
   ringColor: {r: 1, g: 0, b: 0, a: 1}
+  ringVerticalOffset: -1.5
   ballRadius: 0.3
   bounciness: 1
   friction: 0.1
   ballColor: {r: 0.098022126, g: 0.029903898, b: 0.9056604, a: 1}
-  gravity: -9.81
-  restartDelay: 0
-  ballSpawnOffset: {x: 0, y: 0}
-  escapeBuffer: 0
+  ballFreezeTime: 3
+  useRandomBallColors: 1
+  ballColorMinBrightness: 0.8
+  ballColorMinSaturation: 0.7
+  gravity: -19.81
+  gameOverAnimationDuration: 2
+  autoRecording: 1
+  spawnAngleMin: 45
+  spawnAngleMax: 135
+  spawnRadiusPercent: 0.5
+  escapeBuffer: 0.6

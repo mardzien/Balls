@@ -17,6 +17,7 @@ public class Ball : MonoBehaviour
     // Freeze system
     private float lifeTimer = 0f;
     private bool isFrozen = false;
+    private bool canFreeze = true; // Flaga kontrolująca czy piłka może się zamrozić
     private Color ballColor;
     
     /// <summary>
@@ -53,7 +54,7 @@ public class Ball : MonoBehaviour
     
     private void Update()
     {
-        if (isFrozen || settings == null) return;
+        if (isFrozen || settings == null || !canFreeze) return;
         
         // Licznik czasu życia
         lifeTimer += Time.deltaTime;
@@ -72,6 +73,7 @@ public class Ball : MonoBehaviour
     {
         settings = gameSettings;
         isFrozen = false;
+        canFreeze = true;
         lifeTimer = 0f;
         
         if (rb == null) rb = GetComponent<Rigidbody2D>();
@@ -84,8 +86,8 @@ public class Ball : MonoBehaviour
     
     private void SetupPhysics()
     {
-        // Ustaw promień collidera
-        circleCollider.radius = settings.ballRadius;
+        // Ustaw promień collidera - 0.5f (jednostkowe koło), skala obiektu definiuje rzeczywisty rozmiar
+        circleCollider.radius = 0.5f;
         
         // Konfiguracja Rigidbody2D
         rb.bodyType = RigidbodyType2D.Dynamic;
@@ -161,6 +163,15 @@ public class Ball : MonoBehaviour
         }
         
         OnFrozen?.Invoke(this);
+    }
+    
+    /// <summary>
+    /// Wyłącza timer zamrażania - piłka nie zamrozi się automatycznie.
+    /// Używane gdy piłka uciekła przez lukę.
+    /// </summary>
+    public void DisableFreezeTimer()
+    {
+        canFreeze = false;
     }
     
     /// <summary>

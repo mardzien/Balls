@@ -86,6 +86,13 @@ public class RecordingController : MonoBehaviour
         controllerSettings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
         recorderController = new RecorderController(controllerSettings);
         
+        // === KLUCZOWE: Stały framerate dla płynnego nagrywania ===
+        // FrameRatePlayback.Constant zapewnia że każda klatka jest nagrana
+        // nawet jeśli gra działa wolniej niż docelowy FPS
+        controllerSettings.FrameRatePlayback = FrameRatePlayback.Constant;
+        controllerSettings.FrameRate = targetFrameRate;
+        controllerSettings.CapFrameRate = true;
+        
         // Konfiguracja Movie Recorder dla YouTube Shorts
         var movieRecorder = ScriptableObject.CreateInstance<MovieRecorderSettings>();
         movieRecorder.name = "YouTube Shorts Recorder";
@@ -114,17 +121,15 @@ public class RecordingController : MonoBehaviour
             outputFolder, 
             $"BallGame_{timestamp}"
         );
-        // Uwaga: rozszerzenie .webm zostanie dodane automatycznie przez Recorder
         
-        // Audio
-        movieRecorder.AudioInputSettings.PreserveAudio = true;
+        // Audio - wyłączone (brak audio w grze)
+        movieRecorder.AudioInputSettings.PreserveAudio = false;
         
         // Dodaj recorder do kontrolera
         controllerSettings.AddRecorderSettings(movieRecorder);
         controllerSettings.SetRecordModeToManual();
-        controllerSettings.FrameRate = targetFrameRate;
         
-        Debug.Log($"[Recording] Recorder configured: {GameSettings.SCREEN_WIDTH}x{GameSettings.SCREEN_HEIGHT} @ {targetFrameRate}fps");
+        Debug.Log($"[Recording] Recorder configured: {GameSettings.SCREEN_WIDTH}x{GameSettings.SCREEN_HEIGHT} @ {targetFrameRate}fps (Constant FrameRate)");
     }
 #endif
 
@@ -218,33 +223,7 @@ public class RecordingController : MonoBehaviour
         }
     }
     
-#if UNITY_EDITOR
-    private void OnGUI()
-    {
-        // Pokaż status nagrywania
-        if (isRecording)
-        {
-            float elapsed = Time.time - recordingStartTime;
-            string remaining = maxRecordingDuration > 0 
-                ? $" / {maxRecordingDuration:F0}s" 
-                : "";
-            
-            GUIStyle style = new GUIStyle(GUI.skin.box);
-            style.fontSize = 14;
-            style.normal.textColor = Color.red;
-            style.fontStyle = FontStyle.Bold;
-            
-            GUI.Box(new Rect(10, 10, 200, 30), $"● REC {elapsed:F1}s{remaining}", style);
-        }
-        else
-        {
-            GUIStyle style = new GUIStyle(GUI.skin.label);
-            style.fontSize = 12;
-            style.normal.textColor = Color.gray;
-            
-            GUI.Label(new Rect(10, 10, 200, 20), $"Press F9 to record", style);
-        }
-    }
-#endif
+    // Usunięty OnGUI - status nagrywania w konsoli
+    // Aby uniknąć wyświetlania tekstu na nagraniu
 }
 

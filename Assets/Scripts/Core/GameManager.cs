@@ -28,6 +28,7 @@ public class GameManager : MonoBehaviour
     private GameState currentState = GameState.Playing;
     private float gameOverTimer = 0f;
     private int roundCount = 0;
+    private bool hasRecordedThisSession = false; // Flaga zapobiegająca wielokrotnemu nagrywaniu
     
     // Event do komunikacji z efektami końcowymi
     public event System.Action OnGameOverStart;
@@ -83,6 +84,9 @@ public class GameManager : MonoBehaviour
                 gameOverTimer -= Time.deltaTime;
                 if (gameOverTimer <= 0f)
                 {
+                    // NIE zatrzymujemy nagrywania - kontynuuje przez kolejne rundy
+                    // Nagrywanie zakończy się gdy użytkownik zatrzyma grę lub osiągnie max czas
+                    
                     currentState = GameState.Restarting;
                     StartNewRound();
                 }
@@ -105,10 +109,23 @@ public class GameManager : MonoBehaviour
         }
         ring.Initialize(settings);
         
-        // Znajdź RecordingController
+        // Znajdź lub dodaj GameOverEffect
+        var gameOverEffect = FindAnyObjectByType<GameOverEffect>();
+        if (gameOverEffect == null)
+        {
+            gameOverEffect = gameObject.AddComponent<GameOverEffect>();
+            Debug.Log("[Game] GameOverEffect added automatically");
+        }
+        
+        // Znajdź lub dodaj RecordingController
         if (recordingController == null)
         {
-            recordingController = GetComponent<RecordingController>();
+            recordingController = FindAnyObjectByType<RecordingController>();
+            if (recordingController == null)
+            {
+                recordingController = gameObject.AddComponent<RecordingController>();
+                Debug.Log("[Game] RecordingController added automatically");
+            }
         }
     }
     
@@ -124,7 +141,6 @@ public class GameManager : MonoBehaviour
     private void StartNewRound()
     {
         roundCount++;
-        Debug.Log($"[Game] Starting round {roundCount}");
         
         // Wyczyść wszystkie stare kulki
         ClearAllBalls();
@@ -139,10 +155,16 @@ public class GameManager : MonoBehaviour
         // Zmień stan na Playing
         currentState = GameState.Playing;
         
-        // Auto-start nagrywania
-        if (settings.autoRecording && recordingController != null && !recordingController.IsRecording)
+        // Auto-start nagrywania (tylko raz na sesję)
+        if (settings.autoRecording && recordingController != null && !hasRecordedThisSession)
         {
+            hasRecordedThisSession = true;
+            Debug.Log($"[Game] Round {roundCount} - Starting auto-recording");
             recordingController.StartRecording();
+        }
+        else
+        {
+            Debug.Log($"[Game] Round {roundCount} started");
         }
         
         OnGameRestart?.Invoke();
@@ -239,10 +261,10 @@ public class GameManager : MonoBehaviour
         Debug.Log($"[Game] Invoking OnGameOverStart with {subscribers} subscriber(s)");
         OnGameOverStart?.Invoke();
         
-        // Odmróź aktywną kulkę żeby mogła spaść
+        // Wyłącz timer zamrażania na aktywnej piłce - niech spada swobodnie
         if (activeBall != null && !activeBall.IsFrozen)
         {
-            // Kulka już jest odmrożona, niech spada
+            activeBall.DisableFreezeTimer();
         }
     }
     
@@ -267,7 +289,7 @@ public class GameManager : MonoBehaviour
         Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
         
         float center = size / 2f;
-        float radius = size / 2f - 1f;
+        float radius = size / 2f; // Pełny promień - wizualizacja = collider
         
         for (int y = 0; y < size; y++)
         {

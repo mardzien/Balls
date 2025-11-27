@@ -12,19 +12,26 @@ public class GameOverEffect : MonoBehaviour
     
     [Header("Ball Fragment Settings")]
     [Tooltip("Liczba fragmentów na kulkę")]
-    [SerializeField] private int fragmentsPerBall = 6;
+    [SerializeField] private int fragmentsPerBall = 16;
     
     [Tooltip("Siła eksplozji fragmentów")]
-    [SerializeField] private float explosionForce = 5f;
+    [SerializeField] private float explosionForce = 6f;
     
-    [Header("Ring Burn Settings")]
-    [Tooltip("Kolor początkowy płomienia")]
-    [SerializeField] private Color burnColorStart = new Color(1f, 0.5f, 0f);
+    [Header("Ring Destruction Settings")]
+    [Tooltip("Liczba cząsteczek pyłu z pierścienia")]
+    [SerializeField] private int ringParticleCount = 100;
     
-    [Tooltip("Kolor końcowy płomienia")]
-    [SerializeField] private Color burnColorEnd = new Color(1f, 0f, 0f);
+    [Tooltip("Siła rozpadu pierścienia")]
+    [SerializeField] private float ringExplosionForce = 3f;
+    
+    [Tooltip("Kolor początkowy pierścienia przy rozpadzie")]
+    [SerializeField] private Color ringColorStart = new Color(1f, 0.5f, 0f);
+    
+    [Tooltip("Kolor końcowy pierścienia przy rozpadzie")]
+    [SerializeField] private Color ringColorEnd = new Color(1f, 0f, 0f);
     
     private List<GameObject> fragments = new List<GameObject>();
+    private List<GameObject> ringParticles = new List<GameObject>();
     private bool isAnimating = false;
     private float animationTime = 0f;
     private float animationDuration = 2f;
@@ -108,6 +115,9 @@ public class GameOverEffect : MonoBehaviour
         // Stwórz fragmenty z zamrożonych kulek
         CreateBallFragments();
         
+        // Stwórz efekt rozpadu pierścienia
+        CreateRingParticles();
+        
         Debug.Log($"[Effect] Game Over animation started, duration: {animationDuration}s, frozen balls: {CountFrozenBalls()}");
     }
     
@@ -156,12 +166,12 @@ public class GameOverEffect : MonoBehaviour
             sr.color = ballColor;
             
             // Mniejszy rozmiar
-            float fragmentSize = ballRadius * 0.5f;
+            float fragmentSize = ballRadius * 0.4f;
             fragment.transform.localScale = Vector3.one * fragmentSize;
             
             // Dodaj fizykę
             Rigidbody2D rb = fragment.AddComponent<Rigidbody2D>();
-            rb.gravityScale = 1f;
+            rb.gravityScale = 1.5f;
             
             // Losowy kierunek eksplozji
             float angle = (i / (float)fragmentsPerBall) * 360f + Random.Range(-30f, 30f);
@@ -177,30 +187,88 @@ public class GameOverEffect : MonoBehaviour
         }
     }
     
-    private void AnimateRingBurn(float progress)
+    private void CreateRingParticles()
     {
         if (ring == null) return;
         
-        // Interpoluj kolor od burnColorStart do burnColorEnd
-        Color currentColor = Color.Lerp(burnColorStart, burnColorEnd, progress);
+        var settings = gameManager?.Settings;
+        if (settings == null) return;
         
-        // Dodaj migotanie
-        float flicker = 1f + Mathf.Sin(progress * 20f) * 0.1f;
-        currentColor *= flicker;
+        // Ukryj oryginalny pierścień
+        ring.SetVisible(false);
         
-        // Fade out na końcu
-        if (progress > 0.7f)
+        // Pobierz parametry pierścienia
+        float ringRadius = settings.ringRadius;
+        float gapAngle = settings.gapAngleDegrees;
+        float arcAngle = 360f - gapAngle;
+        float startAngle = 90f + gapAngle / 2f;
+        
+        Color ringColor = settings.ringColor;
+        
+        // Stwórz cząsteczki wzdłuż pierścienia
+        for (int i = 0; i < ringParticleCount; i++)
         {
-            float fadeProgress = (progress - 0.7f) / 0.3f;
-            currentColor.a = 1f - fadeProgress;
+            float progress = i / (float)ringParticleCount;
+            float angle = (startAngle + progress * arcAngle) * Mathf.Deg2Rad;
+            
+            // Pozycja na pierścieniu
+            float x = ring.Center.x + Mathf.Cos(angle) * ringRadius;
+            float y = ring.Center.y + Mathf.Sin(angle) * ringRadius;
+            
+            GameObject particle = new GameObject($"RingParticle_{i}");
+            particle.transform.position = new Vector3(x, y, 0);
+            
+            // Dodaj sprite
+            SpriteRenderer sr = particle.AddComponent<SpriteRenderer>();
+            sr.sprite = CreateCircleSprite(8);
+            
+            // Kolor z gradientem od pomarańczowego do czerwonego
+            sr.color = Color.Lerp(ringColorStart, ringColorEnd, Random.Range(0f, 1f));
+            
+            // Losowy rozmiar cząsteczki
+            float particleSize = settings.ringThickness * Random.Range(0.3f, 0.8f);
+            particle.transform.localScale = Vector3.one * particleSize;
+            
+            // Dodaj fizykę
+            Rigidbody2D rb = particle.AddComponent<Rigidbody2D>();
+            rb.gravityScale = Random.Range(1.5f, 2.5f);
+            
+            // Kierunek eksplozji - głównie w dół i na zewnątrz
+            Vector2 outward = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            Vector2 downward = Vector2.down;
+            Vector2 direction = (outward * 0.3f + downward * 0.7f).normalized;
+            direction += new Vector2(Random.Range(-0.3f, 0.3f), Random.Range(-0.2f, 0.2f));
+            
+            rb.linearVelocity = direction * ringExplosionForce * Random.Range(0.5f, 1.5f);
+            rb.angularVelocity = Random.Range(-180f, 180f);
+            
+            ringParticles.Add(particle);
         }
+    }
+    
+    private void AnimateRingBurn(float progress)
+    {
+        // Pierścień jest ukryty - animacja kolorów cząsteczek
+        // Fade out cząsteczek pierścienia
+        float alpha = Mathf.Lerp(1f, 0f, progress);
         
-        ring.SetColor(currentColor);
+        foreach (var particle in ringParticles)
+        {
+            if (particle == null) continue;
+            
+            SpriteRenderer sr = particle.GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                Color c = sr.color;
+                c.a = alpha;
+                sr.color = c;
+            }
+        }
     }
     
     private void AnimateFragments(float progress)
     {
-        // Fade out fragmentów
+        // Fade out fragmentów kulek
         float alpha = 1f - progress;
         
         foreach (var fragment in fragments)
@@ -221,7 +289,7 @@ public class GameOverEffect : MonoBehaviour
     {
         isAnimating = false;
         
-        // Usuń wszystkie fragmenty
+        // Usuń wszystkie fragmenty kulek
         foreach (var fragment in fragments)
         {
             if (fragment != null)
@@ -231,11 +299,25 @@ public class GameOverEffect : MonoBehaviour
         }
         fragments.Clear();
         
-        // Przywróć kolor pierścienia
-        var settings = gameManager?.Settings;
-        if (ring != null && settings != null)
+        // Usuń wszystkie cząsteczki pierścienia
+        foreach (var particle in ringParticles)
         {
-            ring.SetColor(settings.ringColor);
+            if (particle != null)
+            {
+                Destroy(particle);
+            }
+        }
+        ringParticles.Clear();
+        
+        // Przywróć widoczność i kolor pierścienia
+        var settings = gameManager?.Settings;
+        if (ring != null)
+        {
+            ring.SetVisible(true);
+            if (settings != null)
+            {
+                ring.SetColor(settings.ringColor);
+            }
         }
         
         Debug.Log("[Effect] Effects cleaned up");

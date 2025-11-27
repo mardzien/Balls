@@ -124,11 +124,11 @@ public class Ring : MonoBehaviour
         // Punkty dla LineRenderer (na środkowym promieniu)
         Vector3[] linePoints = new Vector3[segments + 1];
         
-        // Punkty dla EdgeCollider (na WEWNĘTRZNEJ krawędzi!)
+        // Punkty dla EdgeCollider (na ŚRODKOWYM promieniu - piłka "wchodzi" w połowę grubości pierścienia)
         Vector2[] colliderPoints = new Vector2[segments + 1];
         
-        // Wewnętrzny promień dla kolizji
-        float collisionRadius = InnerRadius;
+        // Kolizja na środku pierścienia dla lepszego efektu wizualnego
+        float collisionRadius = settings.ringRadius;
         
         // Rozpocznij od połowy luki (luka będzie na górze w pozycji startowej)
         // Kąt 90 stopni = góra
@@ -144,7 +144,7 @@ public class Ring : MonoBehaviour
             float ly = Mathf.Sin(angle) * settings.ringRadius;
             linePoints[i] = new Vector3(lx, ly, 0);
             
-            // EdgeCollider - na WEWNĘTRZNEJ krawędzi
+            // EdgeCollider - na ŚRODKOWYM promieniu
             float cx = Mathf.Cos(angle) * collisionRadius;
             float cy = Mathf.Sin(angle) * collisionRadius;
             colliderPoints[i] = new Vector2(cx, cy);
@@ -222,6 +222,21 @@ public class Ring : MonoBehaviour
             {
                 lineRenderer.material.color = color;
             }
+        }
+    }
+    
+    /// <summary>
+    /// Ustawia widoczność pierścienia (LineRenderer i EdgeCollider).
+    /// </summary>
+    public void SetVisible(bool visible)
+    {
+        if (lineRenderer != null)
+        {
+            lineRenderer.enabled = visible;
+        }
+        if (edgeCollider != null)
+        {
+            edgeCollider.enabled = visible;
         }
     }
     

@@ -9,7 +9,6 @@ public class GameOverEffect : MonoBehaviour
     [Header("References")]
     [SerializeField] private GameManager gameManager;
     [SerializeField] private Ring ring;
-    [SerializeField] private GameSettings settings;
     
     [Header("Ball Fragment Settings")]
     [Tooltip("Liczba fragmentów na kulkę")]
@@ -30,36 +29,43 @@ public class GameOverEffect : MonoBehaviour
     private float animationTime = 0f;
     private float animationDuration = 2f;
     
-    private void Start()
+    private void Awake()
     {
+        // Znajdź GameManager jak najwcześniej
         if (gameManager == null)
         {
-            gameManager = FindAnyObjectByType<GameManager>();
+            gameManager = GetComponent<GameManager>();
+        }
+    }
+    
+    private void Start()
+    {
+        // Znajdź GameManager
+        if (gameManager == null)
+        {
+            gameManager = GetComponent<GameManager>();
+            if (gameManager == null)
+            {
+                gameManager = FindAnyObjectByType<GameManager>();
+            }
         }
         
+        // Znajdź Ring
         if (ring == null)
         {
             ring = FindAnyObjectByType<Ring>();
         }
         
-        if (settings == null)
-        {
-            settings = FindAnyObjectByType<GameSettings>();
-            if (settings == null)
-            {
-                // Spróbuj znaleźć w ustawieniach
-                var allSettings = Resources.FindObjectsOfTypeAll<GameSettings>();
-                if (allSettings.Length > 0)
-                {
-                    settings = allSettings[0];
-                }
-            }
-        }
-        
+        // Subskrybuj eventy
         if (gameManager != null)
         {
             gameManager.OnGameOverStart += StartGameOverAnimation;
             gameManager.OnGameRestart += CleanupEffects;
+            Debug.Log("[Effect] GameOverEffect subscribed to GameManager events");
+        }
+        else
+        {
+            Debug.LogError("[Effect] GameManager not found!");
         }
     }
     
@@ -89,12 +95,31 @@ public class GameOverEffect : MonoBehaviour
     {
         isAnimating = true;
         animationTime = 0f;
+        
+        var settings = gameManager?.Settings;
         animationDuration = settings != null ? settings.gameOverAnimationDuration : 2f;
+        
+        // Pobierz ring z GameManager jeśli nie ustawiony
+        if (ring == null && gameManager != null)
+        {
+            ring = gameManager.Ring;
+        }
         
         // Stwórz fragmenty z zamrożonych kulek
         CreateBallFragments();
         
-        Debug.Log("[Effect] Game Over animation started");
+        Debug.Log($"[Effect] Game Over animation started, duration: {animationDuration}s, frozen balls: {CountFrozenBalls()}");
+    }
+    
+    private int CountFrozenBalls()
+    {
+        if (gameManager == null) return 0;
+        int count = 0;
+        foreach (var ball in gameManager.AllBalls)
+        {
+            if (ball != null && ball.IsFrozen) count++;
+        }
+        return count;
     }
     
     private void CreateBallFragments()
@@ -207,10 +232,13 @@ public class GameOverEffect : MonoBehaviour
         fragments.Clear();
         
         // Przywróć kolor pierścienia
+        var settings = gameManager?.Settings;
         if (ring != null && settings != null)
         {
             ring.SetColor(settings.ringColor);
         }
+        
+        Debug.Log("[Effect] Effects cleaned up");
     }
     
     private Sprite CreateCircleSprite(int size = 32)

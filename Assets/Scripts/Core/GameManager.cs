@@ -48,6 +48,16 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public bool IsGameOver => currentState == GameState.GameOver || currentState == GameState.GameOverAnimation;
     
+    /// <summary>
+    /// Ustawienia gry.
+    /// </summary>
+    public GameSettings Settings => settings;
+    
+    /// <summary>
+    /// Referencja do pierścienia.
+    /// </summary>
+    public Ring Ring => ring;
+    
     private void Start()
     {
         if (settings == null)
@@ -219,9 +229,14 @@ public class GameManager : MonoBehaviour
         currentState = GameState.GameOver;
         gameOverTimer = settings.gameOverAnimationDuration;
         
-        Debug.Log($"[Game] Game Over! Round {roundCount} ended. Animation for {settings.gameOverAnimationDuration}s...");
+        int frozenCount = 0;
+        foreach (var b in allBalls) if (b != null && b.IsFrozen) frozenCount++;
+        
+        Debug.Log($"[Game] Game Over! Round {roundCount}. Frozen balls: {frozenCount}. Animation: {settings.gameOverAnimationDuration}s");
         
         // Wywołaj event dla efektów końcowych
+        int subscribers = OnGameOverStart?.GetInvocationList()?.Length ?? 0;
+        Debug.Log($"[Game] Invoking OnGameOverStart with {subscribers} subscriber(s)");
         OnGameOverStart?.Invoke();
         
         // Odmróź aktywną kulkę żeby mogła spaść

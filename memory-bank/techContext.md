@@ -14,16 +14,18 @@
 - **SpriteRenderer**: Dla kulki (proceduralna tekstura)
 
 ### Physics Engine
-- **Rigidbody2D**: Fizyka kulki
-- **CircleCollider2D**: Kolizja kulki
-- **EdgeCollider2D**: Kolizja pierścienia
+- **Rigidbody2D**: Fizyka kulki (Dynamic/Static)
+- **CircleCollider2D**: Kolizja kulki (radius = 0.5f, jednostkowe koło)
+- **EdgeCollider2D**: Kolizja pierścienia (na środkowym promieniu)
 - **PhysicsMaterial2D**: Bounce i friction
+- **CollisionDetectionMode2D.Continuous**: Zapobiega tunneling
 
 ### Recording
 - **Unity Recorder**: Pakiet com.unity.recorder 5.1.3
 - **Codec**: WebM (MP4 nie działa na Linux)
 - **Quality**: High
 - **FPS**: 60
+- **Auto-start**: Nagrywanie startuje z grą
 
 ## 📁 Project Structure
 
@@ -31,12 +33,14 @@
 Assets/
 ├── Scripts/
 │   ├── Core/
-│   │   ├── GameManager.cs      # Główny manager gry
+│   │   ├── GameManager.cs      # Główny manager, auto-create components
 │   │   ├── GameSettings.cs     # ScriptableObject z konfiguracją
 │   │   └── ScreenSetup.cs      # Konfiguracja ekranu 9:16
 │   ├── Entities/
-│   │   ├── Ring.cs             # Obracający się pierścień
-│   │   └── Ball.cs             # Kulka z fizyką
+│   │   ├── Ring.cs             # Pierścień z luką + SetVisible()
+│   │   └── Ball.cs             # Kulka z fizyką + DisableFreezeTimer()
+│   ├── Effects/
+│   │   └── GameOverEffect.cs   # Efekty końcowe (fragmenty + pył)
 │   ├── Utils/
 │   │   └── EscapeDetector.cs   # Detekcja ucieczki kulki
 │   └── Recording/
@@ -59,14 +63,41 @@ ASPECT_RATIO = 9/16 = 0.5625
 WORLD_HEIGHT = 20
 WORLD_WIDTH = 11.25
 
-// Domyślne wartości
-ringRadius = 4.5       // 80% szerokości ekranu
-ringThickness = 0.3
-ballRadius = 0.25
+// Aktualne wartości w GameConfig
+ringRadius = 4.5
+ringThickness = 0.2
+ballRadius = 0.3
 gapAngleDegrees = 30
-rotationSpeed = 45     // stopni/s
-bounciness = 0.8
-gravity = -9.81
+rotationSpeed = 100     // stopni/s
+bounciness = 1.0
+gravity = -19.81        // podwójna grawitacja
+ballFreezeTime = 3      // sekundy
+escapeBuffer = 0.6
+```
+
+### Ball.cs - Kluczowe metody
+```csharp
+Initialize()          // Setup fizyki i wizualizacji
+Freeze()              // Zamrożenie (Static)
+Unfreeze()            // Odmrożenie (Dynamic)
+DisableFreezeTimer()  // Wyłącza auto-freeze (dla uciekającej piłki)
+```
+
+### Ring.cs - Kluczowe metody
+```csharp
+Initialize()          // Setup pierścienia
+SetColor()            // Zmiana koloru
+SetVisible()          // Ukryj/pokaż (dla efektu końcowego)
+IsInGap()             // Czy kąt jest w luce
+GetRandomSpawnPosition()  // Pozycja spawnu piłki
+```
+
+### GameOverEffect.cs - Efekty
+```csharp
+fragmentsPerBall = 16    // Fragmentów na kulkę
+ringParticleCount = 100  // Cząsteczek pyłu pierścienia
+explosionForce = 6       // Siła eksplozji
+ringExplosionForce = 3   // Siła rozpadu pierścienia
 ```
 
 ### Input System
@@ -99,3 +130,11 @@ gravity = -9.81
 - **Recording**: 60 FPS bez frame drops
 - **Memory**: Niskie zużycie (prosta gra 2D)
 
+## 🔄 Recent Technical Changes (2025-11-27)
+
+1. **Ball Collider**: `circleCollider.radius = 0.5f` (jednostkowe koło skalowane przez transform)
+2. **Ball Sprite**: `radius = size / 2f` (pełny promień dla zgodności z colliderem)
+3. **Ring Collider**: EdgeCollider na `ringRadius` (środek) zamiast `InnerRadius`
+4. **Ball Freeze Control**: Flaga `canFreeze` + metoda `DisableFreezeTimer()`
+5. **Ring Visibility**: Metoda `SetVisible()` dla efektu końcowego
+6. **Auto Components**: GameManager automatycznie tworzy GameOverEffect i RecordingController

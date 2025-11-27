@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Pierścień z luką - obraca się i ma kolizję dla kulki.
 /// Używa LineRenderer do wizualizacji i EdgeCollider2D do fizyki.
-/// Kolizja jest na wewnętrznej krawędzi pierścienia.
+/// Kolizja jest na środkowym promieniu pierścienia.
 /// </summary>
 [RequireComponent(typeof(LineRenderer))]
 [RequireComponent(typeof(EdgeCollider2D))]
@@ -29,7 +29,7 @@ public class Ring : MonoBehaviour
     public Vector2 Center => transform.position;
     
     /// <summary>
-    /// Wewnętrzny promień pierścienia (dla kolizji).
+    /// Wewnętrzny promień pierścienia (wizualna wewnętrzna krawędź).
     /// </summary>
     public float InnerRadius => settings != null ? settings.ringRadius - settings.ringThickness / 2f : 3f;
     

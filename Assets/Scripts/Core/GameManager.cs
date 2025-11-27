@@ -13,50 +13,27 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Ring ring;
     [SerializeField] private RecordingController recordingController;
     
-    // Lista wszystkich kulek (aktywne i zamrożone)
     private List<Ball> allBalls = new List<Ball>();
-    private Ball activeBall; // Aktualnie aktywna (niezamrożona) kulka
+    private Ball activeBall;
     
-    private enum GameState
-    {
-        Playing,
-        GameOver,
-        GameOverAnimation,
-        Restarting
-    }
+    private enum GameState { Playing, GameOver }
     
     private GameState currentState = GameState.Playing;
     private float gameOverTimer = 0f;
+    private float spawnGraceTimer = 0f; // Okres ochronny po spawnie
+    private const float SPAWN_GRACE_PERIOD = 0.5f;
     private int roundCount = 0;
-    private bool hasRecordedThisSession = false; // Flaga zapobiegająca wielokrotnemu nagrywaniu
+    private bool hasRecordedThisSession = false;
     
-    // Event do komunikacji z efektami końcowymi
+    // Events
     public event System.Action OnGameOverStart;
     public event System.Action OnGameRestart;
     
-    /// <summary>
-    /// Aktualny numer rundy.
-    /// </summary>
+    // Public properties
     public int RoundCount => roundCount;
-    
-    /// <summary>
-    /// Wszystkie kulki w grze.
-    /// </summary>
     public IReadOnlyList<Ball> AllBalls => allBalls;
-    
-    /// <summary>
-    /// Czy gra jest w trakcie animacji końcowej.
-    /// </summary>
-    public bool IsGameOver => currentState == GameState.GameOver || currentState == GameState.GameOverAnimation;
-    
-    /// <summary>
-    /// Ustawienia gry.
-    /// </summary>
+    public bool IsGameOver => currentState == GameState.GameOver;
     public GameSettings Settings => settings;
-    
-    /// <summary>
-    /// Referencja do pierścienia.
-    /// </summary>
     public Ring Ring => ring;
     
     private void Start()
@@ -73,58 +50,42 @@ public class GameManager : MonoBehaviour
     
     private void Update()
     {
-        switch (currentState)
+        if (currentState == GameState.Playing)
         {
-            case GameState.Playing:
-                CheckForEscape();
-                break;
-                
-            case GameState.GameOver:
-            case GameState.GameOverAnimation:
-                gameOverTimer -= Time.deltaTime;
-                if (gameOverTimer <= 0f)
-                {
-                    // NIE zatrzymujemy nagrywania - kontynuuje przez kolejne rundy
-                    // Nagrywanie zakończy się gdy użytkownik zatrzyma grę lub osiągnie max czas
-                    
-                    currentState = GameState.Restarting;
-                    StartNewRound();
-                }
-                break;
-                
-            case GameState.Restarting:
-                break;
+            CheckForEscape();
+        }
+        else if (currentState == GameState.GameOver)
+        {
+            gameOverTimer -= Time.deltaTime;
+            if (gameOverTimer <= 0f)
+            {
+                StartNewRound();
+            }
         }
     }
     
     private void SetupGame()
     {
-        // Ustaw grawitację w Physics2D
         Physics2D.gravity = new Vector2(0, settings.gravity);
         
-        // Stwórz lub znajdź Ring
         if (ring == null)
         {
             ring = CreateRing();
         }
         ring.Initialize(settings);
         
-        // Znajdź lub dodaj GameOverEffect
-        var gameOverEffect = FindAnyObjectByType<GameOverEffect>();
-        if (gameOverEffect == null)
+        // Auto-create components if needed
+        if (FindAnyObjectByType<GameOverEffect>() == null)
         {
-            gameOverEffect = gameObject.AddComponent<GameOverEffect>();
-            Debug.Log("[Game] GameOverEffect added automatically");
+            gameObject.AddComponent<GameOverEffect>();
         }
         
-        // Znajdź lub dodaj RecordingController
         if (recordingController == null)
         {
             recordingController = FindAnyObjectByType<RecordingController>();
             if (recordingController == null)
             {
                 recordingController = gameObject.AddComponent<RecordingController>();
-                Debug.Log("[Game] RecordingController added automatically");
             }
         }
     }
@@ -134,37 +95,26 @@ public class GameManager : MonoBehaviour
         GameObject ringObj = new GameObject("Ring");
         ringObj.AddComponent<LineRenderer>();
         ringObj.AddComponent<EdgeCollider2D>();
-        Ring ringComponent = ringObj.AddComponent<Ring>();
-        return ringComponent;
+        return ringObj.AddComponent<Ring>();
     }
     
     private void StartNewRound()
     {
         roundCount++;
-        
-        // Wyczyść wszystkie stare kulki
         ClearAllBalls();
         
-        // Reset pierścienia
         ring.ResetRotation();
+        ring.SetVisible(true);
         ring.SetColor(settings.ringColor);
         
-        // Spawn pierwszą kulkę
         SpawnNewBall();
-        
-        // Zmień stan na Playing
         currentState = GameState.Playing;
         
-        // Auto-start nagrywania (tylko raz na sesję)
+        // Auto-start recording (once per session)
         if (settings.autoRecording && recordingController != null && !hasRecordedThisSession)
         {
             hasRecordedThisSession = true;
-            Debug.Log($"[Game] Round {roundCount} - Starting auto-recording");
             recordingController.StartRecording();
-        }
-        else
-        {
-            Debug.Log($"[Game] Round {roundCount} started");
         }
         
         OnGameRestart?.Invoke();
@@ -172,54 +122,42 @@ public class GameManager : MonoBehaviour
     
     private void SpawnNewBall()
     {
-        // Stwórz nową kulkę
         GameObject ballObj = new GameObject($"Ball_{allBalls.Count}");
         
-        // Dodaj komponenty
         SpriteRenderer sr = ballObj.AddComponent<SpriteRenderer>();
         ballObj.AddComponent<CircleCollider2D>();
         ballObj.AddComponent<Rigidbody2D>();
         Ball ball = ballObj.AddComponent<Ball>();
         
-        // Stwórz sprite koła
-        sr.sprite = CreateCircleSprite();
-        
-        // Inicjalizuj kulkę
+        sr.sprite = SpriteUtility.GetBallSprite();
         ball.Initialize(settings, settings.useRandomBallColors);
         
-        // Ustaw pozycję (losową w górnej części pierścienia)
         Vector2 spawnPos = ring.GetRandomSpawnPosition();
         ball.transform.position = new Vector3(spawnPos.x, spawnPos.y, 0);
         
-        // Subskrybuj eventy
         ball.OnFrozen += OnBallFrozen;
-        ball.OnBounce += OnBallBounce;
         
-        // Dodaj do listy
         allBalls.Add(ball);
         activeBall = ball;
-        
-        Debug.Log($"[Game] Spawned ball at {spawnPos}");
+        spawnGraceTimer = SPAWN_GRACE_PERIOD; // Reset grace period
     }
     
     private void OnBallFrozen(Ball frozenBall)
     {
         if (currentState != GameState.Playing) return;
-        
-        Debug.Log($"[Game] Ball frozen, spawning new one");
-        
-        // Spawn nową kulkę
         SpawnNewBall();
-    }
-    
-    private void OnBallBounce()
-    {
-        // Tu można dodać efekty/dźwięki przy odbiciach
     }
     
     private void CheckForEscape()
     {
         if (activeBall == null || activeBall.IsFrozen) return;
+        
+        // Grace period po spawnie - nie sprawdzaj ucieczki przez pierwsze 0.5s
+        if (spawnGraceTimer > 0f)
+        {
+            spawnGraceTimer -= Time.deltaTime;
+            return;
+        }
         
         Vector2 ringCenter = ring.Center;
         float distance = activeBall.GetDistanceFromCenter(ringCenter);
@@ -227,20 +165,8 @@ public class GameManager : MonoBehaviour
         
         if (distance > escapeThreshold)
         {
-            float ballAngle = activeBall.GetAngleFromCenter(ringCenter);
-            
-            if (ring.IsInGap(ballAngle))
-            {
-                // Kulka uciekła przez lukę!
-                Debug.Log($"[Game] Ball escaped! Distance: {distance:F2}, Angle: {ballAngle:F1}°");
-                TriggerGameOver();
-            }
-            else
-            {
-                // Kulka jest poza pierścieniem ale NIE przez lukę (błąd fizyki)
-                Debug.LogWarning($"[Game] Ball escaped outside gap! Distance: {distance:F2}, Angle: {ballAngle:F1}°");
-                TriggerGameOver();
-            }
+            Debug.Log($"[Game] Ball escaped! Distance: {distance:F2}, Threshold: {escapeThreshold:F2}");
+            TriggerGameOver();
         }
     }
     
@@ -251,17 +177,8 @@ public class GameManager : MonoBehaviour
         currentState = GameState.GameOver;
         gameOverTimer = settings.gameOverAnimationDuration;
         
-        int frozenCount = 0;
-        foreach (var b in allBalls) if (b != null && b.IsFrozen) frozenCount++;
-        
-        Debug.Log($"[Game] Game Over! Round {roundCount}. Frozen balls: {frozenCount}. Animation: {settings.gameOverAnimationDuration}s");
-        
-        // Wywołaj event dla efektów końcowych
-        int subscribers = OnGameOverStart?.GetInvocationList()?.Length ?? 0;
-        Debug.Log($"[Game] Invoking OnGameOverStart with {subscribers} subscriber(s)");
         OnGameOverStart?.Invoke();
         
-        // Wyłącz timer zamrażania na aktywnej piłce - niech spada swobodnie
         if (activeBall != null && !activeBall.IsFrozen)
         {
             activeBall.DisableFreezeTimer();
@@ -275,50 +192,11 @@ public class GameManager : MonoBehaviour
             if (ball != null)
             {
                 ball.OnFrozen -= OnBallFrozen;
-                ball.OnBounce -= OnBallBounce;
                 Destroy(ball.gameObject);
             }
         }
         allBalls.Clear();
         activeBall = null;
-    }
-    
-    private Sprite CreateCircleSprite()
-    {
-        int size = 64;
-        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-        
-        float center = size / 2f;
-        float radius = size / 2f; // Pełny promień - wizualizacja = collider
-        
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                float dx = x - center;
-                float dy = y - center;
-                float distance = Mathf.Sqrt(dx * dx + dy * dy);
-                
-                if (distance <= radius)
-                {
-                    texture.SetPixel(x, y, Color.white);
-                }
-                else
-                {
-                    texture.SetPixel(x, y, Color.clear);
-                }
-            }
-        }
-        
-        texture.Apply();
-        texture.filterMode = FilterMode.Bilinear;
-        
-        return Sprite.Create(
-            texture,
-            new Rect(0, 0, size, size),
-            new Vector2(0.5f, 0.5f),
-            size
-        );
     }
     
     private void OnDestroy()

@@ -12,6 +12,7 @@
 - **Resolution**: 1080x1920 (YouTube Shorts 9:16)
 - **LineRenderer**: Dla rysowania pierścienia
 - **SpriteRenderer**: Dla kulki (proceduralna tekstura)
+- **TrailRenderer**: Dla efektów ogonków piłek
 
 ### Physics Engine
 - **Rigidbody2D**: Fizyka kulki (Dynamic/Static)
@@ -34,17 +35,19 @@ Assets/
 ├── Scripts/
 │   ├── Core/
 │   │   ├── GameManager.cs      # Główny manager, auto-create components
-│   │   ├── GameSettings.cs     # ScriptableObject z konfiguracją
+│   │   ├── GameSettings.cs     # ScriptableObject z konfiguracją + Trail settings
 │   │   └── ScreenSetup.cs      # Konfiguracja ekranu 9:16
 │   ├── Entities/
 │   │   ├── Ring.cs             # Pierścień z luką + SetVisible()
-│   │   └── Ball.cs             # Kulka z fizyką + DisableFreezeTimer()
+│   │   └── Ball.cs             # Kulka z fizyką + BallTrailEffect integration
 │   ├── Effects/
-│   │   └── GameOverEffect.cs   # Efekty końcowe (fragmenty + pył)
+│   │   ├── GameOverEffect.cs   # Efekty końcowe (fragmenty + pył)
+│   │   └── BallTrailEffect.cs  # Efekty ogonków (TrailRenderer + particles)
 │   ├── Utils/
-│   │   └── EscapeDetector.cs   # Detekcja ucieczki kulki
+│   │   └── SpriteUtility.cs    # Proceduralne sprite'y (koła)
 │   └── Recording/
-│       └── RecordingController.cs  # Sterowanie nagrywaniem
+│       ├── RecordingController.cs  # Sterowanie nagrywaniem
+│       └── CollisionRecorder.cs    # Zapis kolizji
 ├── Settings/
 │   └── (URP settings)
 ├── Scenes/
@@ -63,7 +66,7 @@ ASPECT_RATIO = 9/16 = 0.5625
 WORLD_HEIGHT = 20
 WORLD_WIDTH = 11.25
 
-// Aktualne wartości w GameConfig
+// Core settings
 ringRadius = 4.5
 ringThickness = 0.2
 ballRadius = 0.3
@@ -73,14 +76,42 @@ bounciness = 1.0
 gravity = -19.81        // podwójna grawitacja
 ballFreezeTime = 3      // sekundy
 escapeBuffer = 0.6
+
+// Trail Effect settings (NOWE)
+trailStyle = TrailStyle.FadingTrail
+trailTime = 0.25f       // sekundy
+trailWidthMultiplier = 0.8f
+
+// Game Over Effects
+ringParticleCount = 150  // cząsteczki pyłu
 ```
 
 ### Ball.cs - Kluczowe metody
 ```csharp
-Initialize()          // Setup fizyki i wizualizacji
-Freeze()              // Zamrożenie (Static)
+Initialize()          // Setup fizyki, wizualizacji i trail effect
+Freeze()              // Zamrożenie (Static) + SetFrozen na trail
 Unfreeze()            // Odmrożenie (Dynamic)
 DisableFreezeTimer()  // Wyłącza auto-freeze (dla uciekającej piłki)
+SetupTrailEffect()    // Konfiguracja ogonka
+```
+
+### BallTrailEffect.cs - System ogonków (NOWY)
+```csharp
+// Enum TrailStyle
+None           // Bez ogonka
+Comet          // Cienki->gruby + drobinki z końca ogona
+FadingTrail    // Jasny->przezroczysty
+ThinUniform    // Jednolita szerokość i jasność
+
+// Kluczowe metody
+Initialize()           // Setup stylu, koloru, czasu
+SetFrozen()            // Zatrzymuje emisję drobin
+UpdateColor()          // Aktualizacja koloru przy zamrożeniu
+ClearAllCometParticles() // Czyści wszystkie drobinki (static)
+
+// Position History System
+Queue<PositionRecord>  // Historia pozycji piłki
+GetTailPosition()      // Rzeczywista pozycja końca ogona
 ```
 
 ### Ring.cs - Kluczowe metody
@@ -94,10 +125,11 @@ GetRandomSpawnPosition()  // Pozycja spawnu piłki
 
 ### GameOverEffect.cs - Efekty
 ```csharp
-fragmentsPerBall = 16    // Fragmentów na kulkę
-ringParticleCount = 100  // Cząsteczek pyłu pierścienia
-explosionForce = 6       // Siła eksplozji
-ringExplosionForce = 3   // Siła rozpadu pierścienia
+fragmentsPerBall = 16        // Fragmentów na kulkę
+ringParticleCount = 150      // Z GameSettings (konfigurowalne)
+explosionForce = 6           // Siła eksplozji
+ringExplosionForce = 3       // Siła rozpadu pierścienia
+BallTrailEffect.ClearAllCometParticles()  // Cleanup przy restarcie
 ```
 
 ### Input System
@@ -130,11 +162,22 @@ ringExplosionForce = 3   // Siła rozpadu pierścienia
 - **Recording**: 60 FPS bez frame drops
 - **Memory**: Niskie zużycie (prosta gra 2D)
 
-## 🔄 Recent Technical Changes (2025-11-27)
+## 🔄 Recent Technical Changes (2025-12-02)
 
-1. **Ball Collider**: `circleCollider.radius = 0.5f` (jednostkowe koło skalowane przez transform)
-2. **Ball Sprite**: `radius = size / 2f` (pełny promień dla zgodności z colliderem)
-3. **Ring Collider**: EdgeCollider na `ringRadius` (środek) zamiast `InnerRadius`
-4. **Ball Freeze Control**: Flaga `canFreeze` + metoda `DisableFreezeTimer()`
-5. **Ring Visibility**: Metoda `SetVisible()` dla efektu końcowego
-6. **Auto Components**: GameManager automatycznie tworzy GameOverEffect i RecordingController
+### Trail Effect System (NOWE)
+1. **BallTrailEffect.cs**: Nowy komponent zarządzający TrailRenderer
+2. **TrailStyle enum**: None, Comet, FadingTrail, ThinUniform
+3. **Position History**: Queue<PositionRecord> do śledzenia rzeczywistej ścieżki piłki
+4. **Comet Particles**: Drobinki spawnujące się z końca ogona (nie z piłki!)
+5. **Frozen State**: Zamrożone piłki nie emitują drobin
+
+### Ball.cs Integration
+1. **RequireComponent**: TrailRenderer + BallTrailEffect
+2. **SetupTrailEffect()**: Inicjalizacja w SetupVisuals
+3. **Freeze()**: Wywołuje trailEffect.SetFrozen(true)
+
+### GameSettings Extensions
+1. **trailStyle**: TrailStyle.FadingTrail (domyślnie)
+2. **trailTime**: 0.25f sekundy
+3. **trailWidthMultiplier**: 0.8f
+4. **ringParticleCount**: 150 (Game Over particles)

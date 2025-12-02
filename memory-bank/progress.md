@@ -9,6 +9,15 @@
 - **GameOverEffect**: Animacje końcowe (fragmenty kulek + rozpad pierścienia na pył) ✅
 - **Auto Recording**: Nagrywanie startuje automatycznie z grą ✅
 
+### Trail Effect System (NOWE 2025-12-02) ✅
+- **BallTrailEffect**: Komponent zarządzający ogonkami piłek ✅
+- **TrailStyle.Comet**: Cienki→gruby ogon + sypące się drobinki ✅
+- **TrailStyle.FadingTrail**: Jasny→przezroczysty ogon ✅
+- **TrailStyle.ThinUniform**: Jednolity cienki ogon ✅
+- **Position History**: Śledzenie rzeczywistej ścieżki piłki dla dokładnego spawn drobin ✅
+- **Frozen State**: Zamrożone piłki nie emitują drobin ✅
+- **Comet Particles**: Drobinki z końca ogona (nie z pozycji piłki!) ✅
+
 ### Freeze & Multi-Ball System
 - **Ball Freeze**: Kulka zamraża się po 3 sekundach ✅
 - **DisableFreezeTimer**: Aktywna piłka nie zamraża się po ucieczce ✅
@@ -24,10 +33,10 @@
 
 ### Game Over Sequence (2 sekundy)
 - **Ball Fragments**: 16 fragmentów na kulkę, eksplozja + spadanie ✅
-- **Ring Destruction**: 100 cząsteczek pyłu spadających w dół ✅
+- **Ring Destruction**: 150 cząsteczek pyłu spadających w dół (konfigurowalne) ✅
 - **Ring Hide**: Pierścień ukrywa się podczas efektu (SetVisible) ✅
 - **Fade Out**: Wszystkie fragmenty zanikają ✅
-- **Auto Cleanup**: Przywrócenie stanu po animacji ✅
+- **Auto Cleanup**: Przywrócenie stanu po animacji + cleanup drobin komety ✅
 
 ### Screen & Resolution
 - **YouTube Shorts Format**: 1080x1920 (9:16) ✅
@@ -47,8 +56,9 @@
 
 ### Configuration
 - **GameSettings ScriptableObject**: Wszystkie parametry konfigurowalne ✅
+- **Trail Effect Settings**: trailStyle, trailTime, trailWidthMultiplier ✅
+- **Game Over Settings**: ringParticleCount konfigurowalne ✅
 - **Reset to Recommended**: Context menu do resetowania wartości ✅
-- **escapeBuffer**: Przywrócony do 0.6 ✅
 
 ## 🔧 Known Issues
 
@@ -60,18 +70,19 @@ Wszystkie główne problemy zostały naprawione:
 - ~~Brak efektów końcowych~~ → Naprawione (auto-create GameOverEffect)
 - ~~Nagrywanie nie działa~~ → Naprawione (auto-create RecordingController)
 - ~~Aktywna piłka zamraża się~~ → Naprawione (DisableFreezeTimer)
+- ~~Drobinki komety spawnują przy piłce~~ → Naprawione (Position History)
 
 ## 📋 TODO - Następne kroki
 
 ### Wysokie priorytety
-- [ ] **Review + Refactor**: Przegląd i optymalizacja kodu
-- [ ] **Uproszczenie**: Usunięcie zbędnych fragmentów
-- [ ] **Komentarze**: Aktualizacja dokumentacji w kodzie
+- [x] **Efekty wizualne**: Trail dla kulki ✅ DONE
+- [ ] **Testowanie**: Sprawdzenie wszystkich stylów ogonków
+- [ ] **Dostrajanie**: Optymalizacja parametrów wizualnych
 
 ### Średnie priorytety
-- [ ] **Efekty wizualne**: Trail dla kulki
 - [ ] **Dźwięki**: Efekty przy odbiciach
 - [ ] **UI**: Prosty interfejs (może licznik rund)
+- [ ] **Więcej efektów**: Dodatkowe style ogonków
 
 ### Niskie priorytety (przyszłość)
 - [ ] **Różne tryby**: Ellipse, shrink, timer
@@ -87,6 +98,15 @@ Wszystkie główne problemy zostały naprawione:
 5. Gra i nagrywanie startują automatycznie!
 6. F9 - manualne start/stop nagrywania
 
+## 🎨 Trail Effect Styles
+
+| Styl | Opis | Drobinki |
+|------|------|----------|
+| None | Bez ogonka | Nie |
+| Comet | Ciemny→jasny, cienki→gruby | Tak (z końca ogona) |
+| FadingTrail | Jasny→przezroczysty | Nie |
+| ThinUniform | Jednolity | Nie |
+
 ## 📊 Current Quality Metrics
 
 | Metryka | Status |
@@ -94,6 +114,8 @@ Wszystkie główne problemy zostały naprawione:
 | Core gameplay | ✅ Działa |
 | Kolizje | ✅ Naprawione |
 | Efekty końcowe | ✅ Spektakularne |
+| Trail Effects | ✅ 3 style do wyboru |
+| Comet Particles | ✅ Z końca ogona |
 | Nagrywanie | ✅ Auto-start |
 | Performance | ✅ 60 FPS |
-| Kod | 🔄 Do review |
+| Kod | ✅ Dobrze udokumentowany |

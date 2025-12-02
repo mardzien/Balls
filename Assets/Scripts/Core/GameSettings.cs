@@ -1,6 +1,15 @@
 using UnityEngine;
 
 /// <summary>
+/// Typ kształtu spawnu - Ring lub Ellipse.
+/// </summary>
+public enum ShapeType
+{
+    Ring,
+    Ellipse
+}
+
+/// <summary>
 /// Konfiguracja parametrów gry - ScriptableObject do łatwej edycji w inspektorze.
 /// </summary>
 [CreateAssetMenu(fileName = "GameConfig", menuName = "Ball Engine/Game Settings")]
@@ -34,6 +43,10 @@ public class GameSettings : ScriptableObject
     [Tooltip("Wymuś rozdzielczość YouTube Shorts w buildzie")]
     public bool forceResolution = true;
     
+    [Header("Shape Type")]
+    [Tooltip("Typ kształtu spawnu (Ring lub Ellipse)")]
+    public ShapeType shapeType = ShapeType.Ring;
+    
     [Header("Ring Settings")]
     [Tooltip("Promień pierścienia w jednostkach Unity (4.5 = 80% szerokości ekranu)")]
     public float ringRadius = 4.5f;
@@ -45,14 +58,28 @@ public class GameSettings : ScriptableObject
     [Range(10f, 90f)]
     public float gapAngleDegrees = 30f;
     
-    [Tooltip("Prędkość obrotu pierścienia w stopniach na sekundę")]
+    [Tooltip("Prędkość obrotu kształtu w stopniach na sekundę")]
     public float rotationSpeed = 45f;
     
-    [Tooltip("Kolor pierścienia")]
+    [Tooltip("Kolor kształtu")]
     public Color ringColor = Color.white;
     
-    [Tooltip("Przesunięcie pierścienia w dół (jednostki Unity)")]
+    [Tooltip("Przesunięcie kształtu w dół (jednostki Unity)")]
     public float ringVerticalOffset = -1.5f;
+    
+    [Header("Ellipse Settings")]
+    [Tooltip("Promień poziomy elipsy (oś X)")]
+    public float ellipseWidthRadius = 3f;
+    
+    [Tooltip("Promień pionowy elipsy (oś Y)")]
+    public float ellipseHeightRadius = 5f;
+    
+    [Header("Traveling Gap (Wędrująca Luka)")]
+    [Tooltip("Włącz wędrującą lukę (luka przesuwa się po obwodzie niezależnie od rotacji)")]
+    public bool enableTravelingGap = false;
+    
+    [Tooltip("Prędkość wędrowania luki w stopniach na sekundę")]
+    public float gapTravelSpeed = 30f;
     
     [Header("Ball Settings")]
     [Tooltip("Promień kulki (0.25 = dobrze widoczna)")]
@@ -109,7 +136,7 @@ public class GameSettings : ScriptableObject
     public float spawnRadiusPercent = 0.5f;
     
     [Header("Escape Detection")]
-    [Tooltip("Dodatkowy bufor dla detekcji ucieczki (dodawany do promienia pierścienia)")]
+    [Tooltip("Dodatkowy bufor dla detekcji ucieczki (dodawany do promienia kształtu)")]
     public float escapeBuffer = 0.6f;
     
     [Header("Trail Effect (Ogonek)")]
@@ -131,7 +158,6 @@ public class GameSettings : ScriptableObject
     
     /// <summary>
     /// Resetuje wszystkie wartości do zalecanych dla YouTube Shorts.
-    /// W Unity: PPM na asset -> "Reset to Recommended"
     /// </summary>
     [ContextMenu("Reset to Recommended Values")]
     public void ResetToRecommended()
@@ -140,6 +166,9 @@ public class GameSettings : ScriptableObject
         cameraOrthoSize = 10f;
         forceResolution = true;
         
+        // Shape Type
+        shapeType = ShapeType.Ring;
+        
         // Ring
         ringRadius = 4.5f;
         ringThickness = 0.3f;
@@ -147,6 +176,14 @@ public class GameSettings : ScriptableObject
         rotationSpeed = 45f;
         ringColor = Color.white;
         ringVerticalOffset = -1.5f;
+        
+        // Ellipse
+        ellipseWidthRadius = 3f;
+        ellipseHeightRadius = 5f;
+        
+        // Traveling Gap
+        enableTravelingGap = false;
+        gapTravelSpeed = 30f;
         
         // Ball
         ballRadius = 0.25f;
@@ -186,4 +223,3 @@ public class GameSettings : ScriptableObject
         #endif
     }
 }
-

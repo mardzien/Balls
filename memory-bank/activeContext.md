@@ -1,22 +1,21 @@
 # Active Context: Current Work Focus
 
-## 🎯 Current Session Summary (2025-11-27)
+## 🎯 Current Session Summary (2025-12-02)
 
 ### Co zostało zrobione w tej sesji:
-1. **Naprawiono kolizje piłek** - CircleCollider2D teraz ma radius = 0.5f (jednostkowe koło)
-2. **Naprawiono kolizje pierścienia** - EdgeCollider przeniesiony na środek pierścienia
-3. **Naprawiono sprite piłki** - radius = size/2 bez -1 dla zgodności wizualizacji z colliderem
-4. **Dodano automatyczne tworzenie komponentów** - GameOverEffect i RecordingController
-5. **Ulepszono efekt końcowy** - rozpad pierścienia na pył (100 cząsteczek)
-6. **Naprawiono zamrażanie aktywnej piłki** - piłka po ucieczce nie zamraża się
-7. **Przywrócono escapeBuffer** do 0.6
+1. **Dodano system efektów ogonków (Trail Effects)** - trzy style do wyboru
+2. **Styl Kometa** - cienki przy piłce, gruby na końcu + sypające się drobinki
+3. **Styl Zanikający** - jasny przy piłce, przezroczysty dalej
+4. **Styl Jednolity** - stała szerokość i jasność
+5. **Zwiększono liczbę cząsteczek Game Over** - konfigurowalny ringParticleCount (150)
+6. **System śledzenia pozycji** - historia pozycji dla dokładnego spawn drobin
 
 ### Aktualny stan:
 - ✅ Gra działa poprawnie
-- ✅ Kolizje działają prawidłowo
-- ✅ Efekt końcowy z rozpadem pierścienia i piłek
-- ✅ Automatyczne nagrywanie działa
-- ✅ Aktywna piłka nie zamraża się po ucieczce
+- ✅ Efekty ogonków działają dla wszystkich stylów
+- ✅ Kometa ma sypące się drobinki z końca ogona
+- ✅ Zamrożone piłki nie emitują drobin
+- ✅ Efekt końcowy z większą liczbą cząsteczek
 
 ## 📁 Struktura plików
 
@@ -24,17 +23,19 @@
 Assets/Scripts/
 ├── Core/
 │   ├── GameManager.cs      # Główny kontroler, auto-tworzenie komponentów
-│   ├── GameSettings.cs     # Konfiguracja (ScriptableObject)
+│   ├── GameSettings.cs     # Konfiguracja (ScriptableObject) + Trail settings
 │   └── ScreenSetup.cs      # Setup ekranu 9:16
 ├── Entities/
 │   ├── Ring.cs             # Pierścień z luką, SetVisible()
-│   └── Ball.cs             # Kulka z fizyką, DisableFreezeTimer()
+│   └── Ball.cs             # Kulka z fizyką + BallTrailEffect
 ├── Effects/
-│   └── GameOverEffect.cs   # Efekty końcowe (fragmenty + pył pierścienia)
+│   ├── GameOverEffect.cs   # Efekty końcowe (fragmenty + pył pierścienia)
+│   └── BallTrailEffect.cs  # NOWY: Efekty ogonków (TrailRenderer)
 ├── Utils/
-│   └── EscapeDetector.cs   # Detekcja ucieczki
+│   └── SpriteUtility.cs    # Proceduralne sprite'y
 └── Recording/
-    └── RecordingController.cs  # Nagrywanie (F9 + auto-start)
+    ├── RecordingController.cs  # Nagrywanie (F9 + auto-start)
+    └── CollisionRecorder.cs    # Zapis kolizji
 ```
 
 ## 🎮 Sterowanie
@@ -46,6 +47,7 @@ Assets/Scripts/
 
 ## 📊 Parametry gry (aktualne w GameConfig)
 
+### Core
 | Parametr | Wartość | Opis |
 |----------|---------|------|
 | ringRadius | 4.5 | Promień pierścienia |
@@ -58,8 +60,20 @@ Assets/Scripts/
 | ballFreezeTime | 3 | Czas do zamrożenia |
 | escapeBuffer | 0.6 | Bufor detekcji ucieczki |
 
+### Trail Effect (NOWE)
+| Parametr | Wartość | Opis |
+|----------|---------|------|
+| trailStyle | FadingTrail | Styl ogonka (None/Comet/FadingTrail/ThinUniform) |
+| trailTime | 0.25 | Czas życia śladu (sekundy) |
+| trailWidthMultiplier | 0.8 | Mnożnik szerokości ogonka |
+
+### Game Over Effects
+| Parametr | Wartość | Opis |
+|----------|---------|------|
+| ringParticleCount | 150 | Liczba cząsteczek pyłu pierścienia |
+
 ## 🎯 Następne kroki
 
-1. **Review + Refactor** - przegląd i optymalizacja kodu
-2. **Uproszczenie** - usunięcie zbędnego kodu
-3. **Testy** - sprawdzenie edge cases
+1. **Testowanie efektów** - sprawdzenie wszystkich stylów ogonków
+2. **Dostrajanie parametrów** - optymalizacja wizualna
+3. **Dźwięki** - efekty przy odbiciach

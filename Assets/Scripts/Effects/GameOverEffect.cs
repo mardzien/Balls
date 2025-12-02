@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Efekty końcowe gry - rozpad kulek i pierścienia na cząsteczki.
+/// Efekty końcowe gry - rozpad kulek i kształtu spawnu na cząsteczki.
+/// Obsługuje typy kształtów Ring i Ellipse.
+/// Uwzględnia aktualną rotację kształtu.
 /// </summary>
 public class GameOverEffect : MonoBehaviour
 {
@@ -10,15 +12,15 @@ public class GameOverEffect : MonoBehaviour
     [SerializeField] private int fragmentsPerBall = 16;
     [SerializeField] private float explosionForce = 6f;
     
-    [Header("Ring Destruction Settings")]
-    [SerializeField] private float ringExplosionForce = 3f;
-    [SerializeField] private Color ringColorStart = new Color(1f, 0.5f, 0f);
-    [SerializeField] private Color ringColorEnd = new Color(1f, 0f, 0f);
+    [Header("Shape Destruction Settings")]
+    [SerializeField] private float shapeExplosionForce = 3f;
+    [SerializeField] private Color shapeColorStart = new Color(1f, 0.5f, 0f);
+    [SerializeField] private Color shapeColorEnd = new Color(1f, 0f, 0f);
     
     private GameManager gameManager;
-    private Ring ring;
+    private SpawnShape shape;
     private List<GameObject> fragments = new List<GameObject>();
-    private List<GameObject> ringParticles = new List<GameObject>();
+    private List<GameObject> shapeParticles = new List<GameObject>();
     private bool isAnimating = false;
     private float animationTime = 0f;
     private float animationDuration = 2f;
@@ -29,7 +31,7 @@ public class GameOverEffect : MonoBehaviour
         
         if (gameManager != null)
         {
-            ring = gameManager.Ring;
+            shape = gameManager.Shape;
             gameManager.OnGameOverStart += StartGameOverAnimation;
             gameManager.OnGameRestart += CleanupEffects;
         }
@@ -58,10 +60,10 @@ public class GameOverEffect : MonoBehaviour
         animationTime = 0f;
         animationDuration = gameManager?.Settings?.gameOverAnimationDuration ?? 2f;
         
-        if (ring == null) ring = gameManager?.Ring;
+        if (shape == null) shape = gameManager?.Shape;
         
         CreateBallFragments();
-        CreateRingParticles();
+        CreateShapeParticles();
     }
     
     private void CreateBallFragments()
@@ -105,47 +107,94 @@ public class GameOverEffect : MonoBehaviour
         }
     }
     
-    private void CreateRingParticles()
+    private void CreateShapeParticles()
     {
-        if (ring == null) return;
+        if (shape == null) return;
         
         var settings = gameManager?.Settings;
         if (settings == null) return;
         
-        ring.SetVisible(false);
+        shape.SetVisible(false);
         
-        float ringRadius = settings.ringRadius;
+        // Generuj cząsteczki wzdłuż obwodu kształtu
+        int particleCount = settings.ringParticleCount;
         float gapAngle = settings.gapAngleDegrees;
         float arcAngle = 360f - gapAngle;
-        float startAngle = 90f + gapAngle / 2f;
-        int particleCount = settings.ringParticleCount;
+        
+        // Bazowy kąt luki (uwzględnia wędrującą lukę)
+        float gapBaseAngle = settings.enableTravelingGap ? shape.GapAngle : 0f;
+        float startAngle = 90f + gapBaseAngle + gapAngle / 2f;
         
         for (int i = 0; i < particleCount; i++)
         {
             float progress = i / (float)particleCount;
-            float angle = (startAngle + progress * arcAngle) * Mathf.Deg2Rad;
+            float localAngle = startAngle + progress * arcAngle;
             
-            float x = ring.Center.x + Mathf.Cos(angle) * ringRadius;
-            float y = ring.Center.y + Mathf.Sin(angle) * ringRadius;
-            Vector3 position = new Vector3(x, y, 0);
+            // Pobierz punkt na kształcie w lokalnych współrzędnych
+            Vector2 localPoint = GetPointOnShape(settings, localAngle);
             
-            Color color = Color.Lerp(ringColorStart, ringColorEnd, Random.Range(0f, 1f));
-            float size = settings.ringThickness * Random.Range(0.3f, 0.8f);
+            // Transformuj przez rotację kształtu
+            Vector3 worldPoint = shape.transform.TransformPoint(new Vector3(localPoint.x, localPoint.y, 0));
             
-            GameObject particle = CreateParticle(position, color, size);
+            // Oblicz kierunek normalny (od środka na zewnątrz)
+            Vector2 normal = (worldPoint - shape.transform.position).normalized;
+            float normalAngle = Mathf.Atan2(normal.y, normal.x);
             
-            Rigidbody2D rb = particle.GetComponent<Rigidbody2D>();
-            rb.gravityScale = Random.Range(1.5f, 2.5f);
-            
-            Vector2 outward = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-            Vector2 direction = (outward * 0.3f + Vector2.down * 0.7f).normalized;
-            direction += new Vector2(Random.Range(-0.3f, 0.3f), Random.Range(-0.2f, 0.2f));
-            
-            rb.linearVelocity = direction * ringExplosionForce * Random.Range(0.5f, 1.5f);
-            rb.angularVelocity = Random.Range(-180f, 180f);
-            
-            ringParticles.Add(particle);
+            CreateShapeParticle(worldPoint, normalAngle);
         }
+    }
+    
+    /// <summary>
+    /// Zwraca punkt na kształcie dla danego kąta (w lokalnych współrzędnych kształtu).
+    /// </summary>
+    private Vector2 GetPointOnShape(GameSettings settings, float angleDegrees)
+    {
+        float angleRad = angleDegrees * Mathf.Deg2Rad;
+        
+        switch (settings.shapeType)
+        {
+            case ShapeType.Ring:
+                return new Vector2(
+                    settings.ringRadius * Mathf.Cos(angleRad),
+                    settings.ringRadius * Mathf.Sin(angleRad)
+                );
+                
+            case ShapeType.Ellipse:
+                // Elipsa - heightRadius na X, widthRadius na Y (pionowa orientacja - obrócona o 90 stopni)
+                return new Vector2(
+                    settings.ellipseHeightRadius * Mathf.Cos(angleRad),
+                    settings.ellipseWidthRadius * Mathf.Sin(angleRad)
+                );
+                
+            default:
+                return new Vector2(
+                    settings.ringRadius * Mathf.Cos(angleRad),
+                    settings.ringRadius * Mathf.Sin(angleRad)
+                );
+        }
+    }
+    
+    private void CreateShapeParticle(Vector3 position, float normalAngle)
+    {
+        var settings = gameManager?.Settings;
+        if (settings == null) return;
+        
+        Color color = Color.Lerp(shapeColorStart, shapeColorEnd, Random.Range(0f, 1f));
+        float size = settings.ringThickness * Random.Range(0.3f, 0.8f);
+        
+        GameObject particle = CreateParticle(position, color, size);
+        
+        Rigidbody2D rb = particle.GetComponent<Rigidbody2D>();
+        rb.gravityScale = Random.Range(1.5f, 2.5f);
+        
+        Vector2 outward = new Vector2(Mathf.Cos(normalAngle), Mathf.Sin(normalAngle));
+        Vector2 direction = (outward * 0.3f + Vector2.down * 0.7f).normalized;
+        direction += new Vector2(Random.Range(-0.3f, 0.3f), Random.Range(-0.2f, 0.2f));
+        
+        rb.linearVelocity = direction * shapeExplosionForce * Random.Range(0.5f, 1.5f);
+        rb.angularVelocity = Random.Range(-180f, 180f);
+        
+        shapeParticles.Add(particle);
     }
     
     private GameObject CreateParticle(Vector3 position, Color color, float size)
@@ -172,7 +221,7 @@ public class GameOverEffect : MonoBehaviour
             SetAlpha(fragment, alpha);
         }
         
-        foreach (var particle in ringParticles)
+        foreach (var particle in shapeParticles)
         {
             SetAlpha(particle, alpha);
         }
@@ -196,17 +245,17 @@ public class GameOverEffect : MonoBehaviour
         isAnimating = false;
         
         DestroyAll(fragments);
-        DestroyAll(ringParticles);
+        DestroyAll(shapeParticles);
         
         // Wyczyść cząsteczki komety
         BallTrailEffect.ClearAllCometParticles();
         
-        if (ring != null)
+        if (shape != null)
         {
-            ring.SetVisible(true);
+            shape.SetVisible(true);
             if (gameManager?.Settings != null)
             {
-                ring.SetColor(gameManager.Settings.ringColor);
+                shape.SetColor(gameManager.Settings.ringColor);
             }
         }
     }

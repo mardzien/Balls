@@ -10,8 +10,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameSettings settings;
     
     [Header("Scene References")]
-    [SerializeField] private Ring ring;
+    [SerializeField] private SpawnShape shape;
     [SerializeField] private RecordingController recordingController;
+    
+    // Backwards compatibility - jeśli w scenie jest stary Ring, użyj go
+    [SerializeField] private Ring legacyRing;
     
     private List<Ball> allBalls = new List<Ball>();
     private Ball activeBall;
@@ -34,7 +37,16 @@ public class GameManager : MonoBehaviour
     public IReadOnlyList<Ball> AllBalls => allBalls;
     public bool IsGameOver => currentState == GameState.GameOver;
     public GameSettings Settings => settings;
-    public Ring Ring => ring;
+    
+    /// <summary>
+    /// Aktualny kształt spawnu (Ring lub Ellipse).
+    /// </summary>
+    public SpawnShape Shape => shape;
+    
+    /// <summary>
+    /// Backwards compatibility - zwraca Ring jeśli aktualny kształt to Ring.
+    /// </summary>
+    public Ring Ring => shape as Ring;
     
     private void Start()
     {
@@ -68,11 +80,19 @@ public class GameManager : MonoBehaviour
     {
         Physics2D.gravity = new Vector2(0, settings.gravity);
         
-        if (ring == null)
+        // Backwards compatibility - użyj starego Ring jeśli jest przypisany
+        if (shape == null && legacyRing != null)
         {
-            ring = CreateRing();
+            shape = legacyRing;
         }
-        ring.Initialize(settings);
+        
+        // Utwórz nowy kształt jeśli nie ma żadnego
+        if (shape == null)
+        {
+            shape = CreateShape(settings.shapeType);
+        }
+        
+        shape.Initialize(settings);
         
         // Auto-create components if needed
         if (FindAnyObjectByType<GameOverEffect>() == null)
@@ -90,12 +110,25 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    private Ring CreateRing()
+    /// <summary>
+    /// Factory method - tworzy odpowiedni kształt na podstawie typu.
+    /// </summary>
+    private SpawnShape CreateShape(ShapeType shapeType)
     {
-        GameObject ringObj = new GameObject("Ring");
-        ringObj.AddComponent<LineRenderer>();
-        ringObj.AddComponent<EdgeCollider2D>();
-        return ringObj.AddComponent<Ring>();
+        string shapeName = shapeType.ToString();
+        GameObject shapeObj = new GameObject(shapeName);
+        shapeObj.AddComponent<LineRenderer>();
+        shapeObj.AddComponent<EdgeCollider2D>();
+        
+        SpawnShape newShape = shapeType switch
+        {
+            ShapeType.Ring => shapeObj.AddComponent<Ring>(),
+            ShapeType.Ellipse => shapeObj.AddComponent<EllipseShape>(),
+            _ => shapeObj.AddComponent<Ring>()
+        };
+        
+        Debug.Log($"[GameManager] Created shape: {shapeName}");
+        return newShape;
     }
     
     private void StartNewRound()
@@ -103,9 +136,9 @@ public class GameManager : MonoBehaviour
         roundCount++;
         ClearAllBalls();
         
-        ring.ResetRotation();
-        ring.SetVisible(true);
-        ring.SetColor(settings.ringColor);
+        shape.ResetRotation();
+        shape.SetVisible(true);
+        shape.SetColor(settings.ringColor);
         
         SpawnNewBall();
         currentState = GameState.Playing;
@@ -132,7 +165,7 @@ public class GameManager : MonoBehaviour
         sr.sprite = SpriteUtility.GetBallSprite();
         ball.Initialize(settings, settings.useRandomBallColors);
         
-        Vector2 spawnPos = ring.GetRandomSpawnPosition();
+        Vector2 spawnPos = shape.GetRandomSpawnPosition();
         ball.transform.position = new Vector3(spawnPos.x, spawnPos.y, 0);
         
         ball.OnFrozen += OnBallFrozen;
@@ -169,13 +202,12 @@ public class GameManager : MonoBehaviour
             return;
         }
         
-        Vector2 ringCenter = ring.Center;
-        float distance = activeBall.GetDistanceFromCenter(ringCenter);
-        float escapeThreshold = ring.InnerRadius + settings.escapeBuffer;
+        Vector2 ballPosition = activeBall.transform.position;
         
-        if (distance > escapeThreshold)
+        // Sprawdź czy piłka jest poza granicą kształtu
+        if (shape.IsPointOutsideShape(ballPosition, settings.escapeBuffer))
         {
-            Debug.Log($"[Game] Ball escaped! Distance: {distance:F2}, Threshold: {escapeThreshold:F2}");
+            Debug.Log($"[Game] Ball escaped!");
             TriggerGameOver();
         }
     }

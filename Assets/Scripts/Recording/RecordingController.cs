@@ -26,10 +26,14 @@ public class RecordingController : MonoBehaviour
     [Tooltip("Klatki na sekundę")]
     [SerializeField] private int targetFrameRate = 60;
     
+    [Header("Collision Recording")]
+    [SerializeField] private CollisionRecorder collisionRecorder;
+    
     [Header("Status")]
     [SerializeField] private bool isRecording = false;
     
     private float recordingStartTime;
+    private string currentRecordingName;
     
 #if UNITY_EDITOR
     private RecorderController recorderController;
@@ -48,6 +52,16 @@ public class RecordingController : MonoBehaviour
         {
             System.IO.Directory.CreateDirectory(fullPath);
             Debug.Log($"[Recording] Created output folder: {fullPath}");
+        }
+        
+        // Auto-create CollisionRecorder if not assigned
+        if (collisionRecorder == null)
+        {
+            collisionRecorder = GetComponent<CollisionRecorder>();
+            if (collisionRecorder == null)
+            {
+                collisionRecorder = gameObject.AddComponent<CollisionRecorder>();
+            }
         }
         
 #if UNITY_EDITOR
@@ -144,6 +158,10 @@ public class RecordingController : MonoBehaviour
             return;
         }
         
+        // Generuj nazwę pliku (wspólną dla wideo i JSON)
+        string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        currentRecordingName = $"BallGame_{timestamp}";
+        
 #if UNITY_EDITOR
         if (recorderController == null)
         {
@@ -162,25 +180,28 @@ public class RecordingController : MonoBehaviour
         }
         if (movieRecorder != null)
         {
-            string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             movieRecorder.OutputFile = System.IO.Path.Combine(
                 Application.dataPath, 
                 "..", 
                 outputFolder, 
-                $"BallGame_{timestamp}"
+                currentRecordingName
             );
         }
         
         recorderController.PrepareRecording();
         recorderController.StartRecording();
+#endif
+        
+        // Start collision recording
+        if (collisionRecorder != null)
+        {
+            collisionRecorder.StartRecording(currentRecordingName);
+        }
         
         isRecording = true;
         recordingStartTime = Time.time;
         
-        Debug.Log($"[Recording] ▶ Started recording to: {outputFolder}/");
-#else
-        Debug.LogWarning("[Recording] Recording is only available in Unity Editor!");
-#endif
+        Debug.Log($"[Recording] ▶ Started recording to: {outputFolder}/{currentRecordingName}");
     }
     
     /// <summary>
@@ -196,11 +217,17 @@ public class RecordingController : MonoBehaviour
         
 #if UNITY_EDITOR
         recorderController.StopRecording();
+#endif
+        
+        // Stop collision recording
+        if (collisionRecorder != null && collisionRecorder.IsRecording)
+        {
+            collisionRecorder.StopRecording();
+        }
         
         float duration = Time.time - recordingStartTime;
         Debug.Log($"[Recording] ⏹ Stopped recording. Duration: {duration:F1}s");
-        Debug.Log($"[Recording] File saved to: {outputFolder}/");
-#endif
+        Debug.Log($"[Recording] Files saved to: {outputFolder}/{currentRecordingName}.*");
         
         isRecording = false;
     }
@@ -214,6 +241,11 @@ public class RecordingController : MonoBehaviour
     /// Aktualny czas nagrywania w sekundach.
     /// </summary>
     public float RecordingTime => isRecording ? Time.time - recordingStartTime : 0f;
+    
+    /// <summary>
+    /// Referencja do CollisionRecorder (do rejestrowania zdarzeń kolizji).
+    /// </summary>
+    public CollisionRecorder CollisionRecorder => collisionRecorder;
     
     private void OnDestroy()
     {

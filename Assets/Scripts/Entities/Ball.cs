@@ -22,8 +22,9 @@ public class Ball : MonoBehaviour
     
     /// <summary>
     /// Event wywoływany przy kolizji z pierścieniem.
+    /// Parametr: prędkość względna kolizji (magnitude).
     /// </summary>
-    public event System.Action OnBounce;
+    public event System.Action<float> OnBounce;
     
     /// <summary>
     /// Event wywoływany gdy kulka się zamrozi.
@@ -172,6 +173,7 @@ public class Ball : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (isFrozen) return;
-        OnBounce?.Invoke();
+        float relativeVelocity = collision.relativeVelocity.magnitude;
+        OnBounce?.Invoke(relativeVelocity);
     }
 }

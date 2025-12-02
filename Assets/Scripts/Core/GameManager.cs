@@ -136,10 +136,20 @@ public class GameManager : MonoBehaviour
         ball.transform.position = new Vector3(spawnPos.x, spawnPos.y, 0);
         
         ball.OnFrozen += OnBallFrozen;
+        ball.OnBounce += OnBallBounce;
         
         allBalls.Add(ball);
         activeBall = ball;
         spawnGraceTimer = SPAWN_GRACE_PERIOD; // Reset grace period
+    }
+    
+    private void OnBallBounce(float relativeVelocity)
+    {
+        // Przekaż zdarzenie kolizji do CollisionRecorder
+        if (recordingController != null && recordingController.CollisionRecorder != null)
+        {
+            recordingController.CollisionRecorder.RecordCollision(relativeVelocity);
+        }
     }
     
     private void OnBallFrozen(Ball frozenBall)
@@ -192,6 +202,7 @@ public class GameManager : MonoBehaviour
             if (ball != null)
             {
                 ball.OnFrozen -= OnBallFrozen;
+                ball.OnBounce -= OnBallBounce;
                 Destroy(ball.gameObject);
             }
         }

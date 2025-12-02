@@ -112,6 +112,23 @@ public class GameSettings : ScriptableObject
     [Tooltip("Dodatkowy bufor dla detekcji ucieczki (dodawany do promienia pierścienia)")]
     public float escapeBuffer = 0.6f;
     
+    [Header("Trail Effect (Ogonek)")]
+    [Tooltip("Styl ogonka piłki")]
+    public TrailStyle trailStyle = TrailStyle.FadingTrail;
+    
+    [Tooltip("Czas życia śladu (sekundy)")]
+    [Range(0.1f, 1f)]
+    public float trailTime = 0.25f;
+    
+    [Tooltip("Bazowa szerokość ogonka (mnożnik promienia piłki)")]
+    [Range(0.2f, 2f)]
+    public float trailWidthMultiplier = 0.8f;
+    
+    [Header("Game Over Effects")]
+    [Tooltip("Liczba cząsteczek pyłu pierścienia przy Game Over")]
+    [Range(50, 300)]
+    public int ringParticleCount = 150;
+    
     /// <summary>
     /// Resetuje wszystkie wartości do zalecanych dla YouTube Shorts.
     /// W Unity: PPM na asset -> "Reset to Recommended"
@@ -154,6 +171,14 @@ public class GameSettings : ScriptableObject
         
         // Escape
         escapeBuffer = 0.6f;
+        
+        // Trail Effect
+        trailStyle = TrailStyle.FadingTrail;
+        trailTime = 0.25f;
+        trailWidthMultiplier = 0.8f;
+        
+        // Game Over Effects
+        ringParticleCount = 150;
         
         #if UNITY_EDITOR
         UnityEditor.EditorUtility.SetDirty(this);

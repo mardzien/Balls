@@ -7,11 +7,14 @@ using UnityEngine;
 [RequireComponent(typeof(CircleCollider2D))]
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(SpriteRenderer))]
+[RequireComponent(typeof(TrailRenderer))]
+[RequireComponent(typeof(BallTrailEffect))]
 public class Ball : MonoBehaviour
 {
     private Rigidbody2D rb;
     private CircleCollider2D circleCollider;
     private SpriteRenderer spriteRenderer;
+    private BallTrailEffect trailEffect;
     private GameSettings settings;
     
     // Freeze system
@@ -46,6 +49,7 @@ public class Ball : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         circleCollider = GetComponent<CircleCollider2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        trailEffect = GetComponent<BallTrailEffect>();
     }
     
     private void Update()
@@ -109,6 +113,23 @@ public class Ball : MonoBehaviour
             : settings.ballColor;
             
         spriteRenderer.color = ballColor;
+        
+        // Setup trail effect
+        SetupTrailEffect();
+    }
+    
+    private void SetupTrailEffect()
+    {
+        if (trailEffect == null)
+        {
+            trailEffect = GetComponent<BallTrailEffect>();
+        }
+        
+        if (trailEffect != null)
+        {
+            float trailWidth = settings.ballRadius * settings.trailWidthMultiplier;
+            trailEffect.Initialize(settings.trailStyle, ballColor, settings.trailTime, trailWidth);
+        }
     }
     
     private Color GenerateRandomBrightColor()
@@ -136,10 +157,17 @@ public class Ball : MonoBehaviour
         }
         
         // Przyciemnij kolor zamrożonej kulki (zachowaj pełną alpha)
+        Color dimmedColor = ballColor * 0.8f;
         if (spriteRenderer != null)
         {
-            Color dimmed = ballColor * 0.8f;
-            spriteRenderer.color = new Color(dimmed.r, dimmed.g, dimmed.b, 1f);
+            spriteRenderer.color = new Color(dimmedColor.r, dimmedColor.g, dimmedColor.b, 1f);
+        }
+        
+        // Zaktualizuj trail effect - ustaw zamrożenie i kolor
+        if (trailEffect != null)
+        {
+            trailEffect.SetFrozen(true);
+            trailEffect.UpdateColor(dimmedColor);
         }
         
         OnFrozen?.Invoke(this);

@@ -11,7 +11,6 @@ public class GameOverEffect : MonoBehaviour
     [SerializeField] private float explosionForce = 6f;
     
     [Header("Ring Destruction Settings")]
-    [SerializeField] private int ringParticleCount = 100;
     [SerializeField] private float ringExplosionForce = 3f;
     [SerializeField] private Color ringColorStart = new Color(1f, 0.5f, 0f);
     [SerializeField] private Color ringColorEnd = new Color(1f, 0f, 0f);
@@ -119,10 +118,11 @@ public class GameOverEffect : MonoBehaviour
         float gapAngle = settings.gapAngleDegrees;
         float arcAngle = 360f - gapAngle;
         float startAngle = 90f + gapAngle / 2f;
+        int particleCount = settings.ringParticleCount;
         
-        for (int i = 0; i < ringParticleCount; i++)
+        for (int i = 0; i < particleCount; i++)
         {
-            float progress = i / (float)ringParticleCount;
+            float progress = i / (float)particleCount;
             float angle = (startAngle + progress * arcAngle) * Mathf.Deg2Rad;
             
             float x = ring.Center.x + Mathf.Cos(angle) * ringRadius;
@@ -197,6 +197,9 @@ public class GameOverEffect : MonoBehaviour
         
         DestroyAll(fragments);
         DestroyAll(ringParticles);
+        
+        // Wyczyść cząsteczki komety
+        BallTrailEffect.ClearAllCometParticles();
         
         if (ring != null)
         {

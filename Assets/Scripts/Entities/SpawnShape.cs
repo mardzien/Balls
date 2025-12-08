@@ -70,35 +70,17 @@ public abstract class SpawnShape : MonoBehaviour
     
     protected virtual void Update()
     {
-        UpdateRotation();
-        UpdateTravelingGap();
-    }
-    
-    /// <summary>
-    /// Aktualizuje rotację całego kształtu.
-    /// Rotacja jest wyłączona gdy włączona jest wędrująca luka.
-    /// </summary>
-    protected virtual void UpdateRotation()
-    {
-        if (settings == null) return;
-        
-        // Nie obracaj kształtu gdy włączona jest wędrująca luka
-        if (settings.enableTravelingGap) return;
-        
-        CurrentAngle += settings.rotationSpeed * Time.deltaTime;
-        CurrentAngle %= 360f;
-        
-        transform.rotation = Quaternion.Euler(0, 0, CurrentAngle);
+        UpdateGapPosition();
     }
     
     /// <summary>
     /// Aktualizuje pozycję wędrującej luki.
     /// </summary>
-    protected virtual void UpdateTravelingGap()
+    protected virtual void UpdateGapPosition()
     {
-        if (settings == null || !settings.enableTravelingGap) return;
+        if (settings == null) return;
         
-        GapAngle += settings.gapTravelSpeed * Time.deltaTime;
+        GapAngle += settings.rotationSpeed * Time.deltaTime;
         GapAngle %= 360f;
         
         // Regeneruj kształt gdy luka się przesuwa
@@ -213,13 +195,11 @@ public abstract class SpawnShape : MonoBehaviour
     public abstract Vector2 GetRandomSpawnPosition();
     
     /// <summary>
-    /// Resetuje rotację kształtu i pozycję luki do stanu początkowego.
+    /// Resetuje pozycję luki do stanu początkowego.
     /// </summary>
     public virtual void ResetRotation()
     {
-        CurrentAngle = 0f;
         GapAngle = 0f;
-        transform.rotation = Quaternion.identity;
         GenerateShape();
     }
     
@@ -255,12 +235,12 @@ public abstract class SpawnShape : MonoBehaviour
     }
     
     /// <summary>
-    /// Oblicza efektywny kąt luki uwzględniając wędrującą lukę.
+    /// Oblicza efektywny kąt luki.
     /// </summary>
     protected float GetEffectiveGapBaseAngle()
     {
-        // Bazowy kąt luki (90 stopni = góra) + przesunięcie od wędrującej luki
-        return 90f + (settings != null && settings.enableTravelingGap ? GapAngle : 0f);
+        // Bazowy kąt luki (90 stopni = góra) + przesunięcie wędrującej luki
+        return 90f + GapAngle;
     }
     
     /// <summary>

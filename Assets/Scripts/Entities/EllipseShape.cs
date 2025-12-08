@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Elipsa z luką - obraca się i ma kolizję dla kulki.
+/// Elipsa z wędrującą luką - kształt nie obraca się, tylko luka wędruje po obwodzie.
 /// Używa LineRenderer do wizualizacji i EdgeCollider2D do fizyki.
 /// Elipsa jest zorientowana pionowo (wysokość > szerokość).
 /// Dziedziczy z SpawnShape.
@@ -11,26 +11,20 @@ public class EllipseShape : SpawnShape
     // Liczba segmentów do rysowania (więcej = gładszy)
     private const int TOTAL_SEGMENTS = 360;
     
-    private float _currentAngle;
+    /// <summary>
+    /// Nieużywany - elipsa nie obraca się, tylko luka wędruje.
+    /// </summary>
+    public override float CurrentAngle { get; protected set; }
     
     /// <summary>
-    /// Aktualny kąt rotacji elipsy w stopniach.
+    /// Promień poziomy elipsy (oś X) - używa widthRadius (mniejszy).
     /// </summary>
-    public override float CurrentAngle 
-    { 
-        get => _currentAngle; 
-        protected set => _currentAngle = value; 
-    }
+    private float RadiusX => settings != null ? settings.ellipseWidthRadius : 3f;
     
     /// <summary>
-    /// Promień poziomy elipsy (oś X) - używa heightRadius dla pionowej orientacji.
+    /// Promień pionowy elipsy (oś Y) - używa heightRadius (większy).
     /// </summary>
-    private float RadiusX => settings != null ? settings.ellipseHeightRadius : 3f;
-    
-    /// <summary>
-    /// Promień pionowy elipsy (oś Y) - używa widthRadius dla pionowej orientacji.
-    /// </summary>
-    private float RadiusY => settings != null ? settings.ellipseWidthRadius : 5f;
+    private float RadiusY => settings != null ? settings.ellipseHeightRadius : 5f;
     
     /// <summary>
     /// Wewnętrzny promień elipsy (średni minus grubość).
@@ -63,12 +57,12 @@ public class EllipseShape : SpawnShape
     /// <summary>
     /// Kąt początku luki w stopniach.
     /// </summary>
-    public override float GapStartAngle => GetEffectiveGapBaseAngle() + CurrentAngle - settings.gapAngleDegrees / 2f;
+    public override float GapStartAngle => GetEffectiveGapBaseAngle() - settings.gapAngleDegrees / 2f;
     
     /// <summary>
     /// Kąt końca luki w stopniach.
     /// </summary>
-    public override float GapEndAngle => GetEffectiveGapBaseAngle() + CurrentAngle + settings.gapAngleDegrees / 2f;
+    public override float GapEndAngle => GetEffectiveGapBaseAngle() + settings.gapAngleDegrees / 2f;
     
     /// <summary>
     /// Zwraca promień elipsy (średni).
@@ -122,11 +116,8 @@ public class EllipseShape : SpawnShape
         // Punkty dla EdgeCollider
         Vector2[] colliderPoints = new Vector2[segments + 1];
         
-        // Bazowy kąt luki (uwzględnia wędrującą lukę)
-        float gapBaseAngle = settings.enableTravelingGap ? GapAngle : 0f;
-        
         // Rozpocznij od połowy luki (luka będzie na górze w pozycji startowej)
-        float startAngle = 90f + gapBaseAngle + settings.gapAngleDegrees / 2f;
+        float startAngle = 90f + GapAngle + settings.gapAngleDegrees / 2f;
         float angleStep = arcAngle / segments;
         
         for (int i = 0; i <= segments; i++)

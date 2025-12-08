@@ -4,12 +4,20 @@
 
 ### Core Game Engine
 - **GameManager**: Zarządza pętlą gry, multi-ball spawn, game over sequence ✅
-- **Ring**: Obracający się pierścień z luką, kolizja na środku pierścienia ✅
-- **Ball**: Kulka z fizyką 2D, timer zamrażania, losowe kolory ✅
-- **GameOverEffect**: Animacje końcowe (fragmenty kulek + rozpad pierścienia na pył) ✅
+- **SpawnShape**: Bazowa klasa dla kształtów (Ring, Ellipse) ✅
+- **Ring**: Pierścień z wędrującą luką ✅
+- **EllipseShape**: Elipsa z wędrującą luką ✅
+- **Ball**: Kulka z fizyką 2D, timer zamrażania, zawsze losowe kolory ✅
+- **GameOverEffect**: Animacje końcowe (fragmenty kulek + rozpad kształtu na pył) ✅
 - **Auto Recording**: Nagrywanie startuje automatycznie z grą ✅
 
-### Trail Effect System (NOWE 2025-12-02) ✅
+### Wędrująca Luka (Refaktoryzacja 2025-12-08) ✅
+- **Uproszczony system**: Kształty nie obracają się, tylko luka wędruje ✅
+- **Jeden parametr**: `rotationSpeed` - prędkość wędrującej luki ✅
+- **Ring i Ellipse**: Oba kształty używają tego samego mechanizmu ✅
+- **Usunięte**: `enableTravelingGap`, `gapTravelSpeed` - zbędne ✅
+
+### Trail Effect System ✅
 - **BallTrailEffect**: Komponent zarządzający ogonkami piłek ✅
 - **TrailStyle.Comet**: Cienki→gruby ogon + sypące się drobinki ✅
 - **TrailStyle.FadingTrail**: Jasny→przezroczysty ogon ✅
@@ -22,19 +30,19 @@
 - **Ball Freeze**: Kulka zamraża się po 3 sekundach ✅
 - **DisableFreezeTimer**: Aktywna piłka nie zamraża się po ucieczce ✅
 - **Auto Spawn**: Nowa kulka spawn po zamrożeniu poprzedniej ✅
-- **Random Colors**: Losowe jasne kolory (HSV) ✅
+- **Random Colors**: Zawsze losowe jasne kolory (HSV) ✅
 - **Frozen State**: Zamrożone kulki stają się statyczne ✅
 
-### Collision System (NAPRAWIONE)
+### Collision System
 - **Ball Collider**: CircleCollider2D z radius = 0.5f (jednostkowe koło) ✅
 - **Ball Sprite**: Pełny promień (size/2) dla zgodności z colliderem ✅
-- **Ring Collider**: EdgeCollider2D na środku pierścienia (ringRadius) ✅
+- **Shape Collider**: EdgeCollider2D na środku kształtu ✅
 - **Continuous Detection**: CollisionDetectionMode2D.Continuous ✅
 
 ### Game Over Sequence (2 sekundy)
 - **Ball Fragments**: 16 fragmentów na kulkę, eksplozja + spadanie ✅
-- **Ring Destruction**: 150 cząsteczek pyłu spadających w dół (konfigurowalne) ✅
-- **Ring Hide**: Pierścień ukrywa się podczas efektu (SetVisible) ✅
+- **Shape Destruction**: 150 cząsteczek pyłu spadających w dół (konfigurowalne) ✅
+- **Shape Hide**: Kształt ukrywa się podczas efektu (SetVisible) ✅
 - **Fade Out**: Wszystkie fragmenty zanikają ✅
 - **Auto Cleanup**: Przywrócenie stanu po animacji + cleanup drobin komety ✅
 
@@ -46,19 +54,25 @@
 ### Recording System
 - **Unity Recorder**: Pakiet 5.1.3 ✅
 - **RecordingController**: F9 start/stop + auto-start ✅
+- **BatchRecordingController**: F10 start/stop, automatyczne wiele rund ✅
+- **ParameterRandomizer**: Randomizacja parametrów między rundami ✅
 - **Auto Component Creation**: Automatyczne dodawanie do sceny ✅
 - **WebM Codec**: Działa na Linux ✅
-- **Auto-stop**: Po 60 sekundach ✅
-
-### Auto Component Creation
-- **GameOverEffect**: Automatycznie tworzony przez GameManager ✅
-- **RecordingController**: Automatycznie tworzony przez GameManager ✅
 
 ### Configuration
 - **GameSettings ScriptableObject**: Wszystkie parametry konfigurowalne ✅
 - **Trail Effect Settings**: trailStyle, trailTime, trailWidthMultiplier ✅
 - **Game Over Settings**: ringParticleCount konfigurowalne ✅
 - **Reset to Recommended**: Context menu do resetowania wartości ✅
+
+### Refaktoryzacja (2025-12-08) ✅
+- **Usunięto ballColor**: Kolory zawsze losowe ✅
+- **Usunięto useRandomBallColors**: Zawsze true, zbędny parametr ✅
+- **Usunięto enableTravelingGap**: Wędrująca luka zawsze włączona ✅
+- **Usunięto gapTravelSpeed**: Używa teraz rotationSpeed ✅
+- **Usunięto legacyRing**: Legacy backwards compatibility ✅
+- **Usunięto autoRecording**: Legacy, nieużywany ✅
+- **Uproszczony kod**: Czystszy i łatwiejszy w utrzymaniu ✅
 
 ## 🔧 Known Issues
 
@@ -71,11 +85,14 @@ Wszystkie główne problemy zostały naprawione:
 - ~~Nagrywanie nie działa~~ → Naprawione (auto-create RecordingController)
 - ~~Aktywna piłka zamraża się~~ → Naprawione (DisableFreezeTimer)
 - ~~Drobinki komety spawnują przy piłce~~ → Naprawione (Position History)
+- ~~Zbyt skomplikowany system rotacji/luki~~ → Naprawione (refaktoryzacja)
 
 ## 📋 TODO - Następne kroki
 
 ### Wysokie priorytety
 - [x] **Efekty wizualne**: Trail dla kulki ✅ DONE
+- [x] **Batch Recording**: Automatyczne nagrywanie wielu rund ✅ DONE
+- [x] **Refaktoryzacja**: Uproszczenie kodu ✅ DONE
 - [ ] **Testowanie**: Sprawdzenie wszystkich stylów ogonków
 - [ ] **Dostrajanie**: Optymalizacja parametrów wizualnych
 
@@ -85,7 +102,6 @@ Wszystkie główne problemy zostały naprawione:
 - [ ] **Więcej efektów**: Dodatkowe style ogonków
 
 ### Niskie priorytety (przyszłość)
-- [ ] **Różne tryby**: Ellipse, shrink, timer
 - [ ] **Przeszkody centralne**: Obiekty na środku
 - [ ] **Post-production**: FFmpeg do konwersji WebM → MP4
 
@@ -96,7 +112,8 @@ Wszystkie główne problemy zostały naprawione:
 3. W Game View ustaw rozdzielczość 1080x1920
 4. Naciśnij Play
 5. Gra i nagrywanie startują automatycznie!
-6. F9 - manualne start/stop nagrywania
+6. F9 - manualne start/stop nagrywania pojedynczego
+7. F10 - start/stop batch recording
 
 ## 🎨 Trail Effect Styles
 
@@ -116,6 +133,7 @@ Wszystkie główne problemy zostały naprawione:
 | Efekty końcowe | ✅ Spektakularne |
 | Trail Effects | ✅ 3 style do wyboru |
 | Comet Particles | ✅ Z końca ogona |
-| Nagrywanie | ✅ Auto-start |
+| Nagrywanie | ✅ Auto-start + Batch |
+| Wędrująca luka | ✅ Uproszczona |
 | Performance | ✅ 60 FPS |
-| Kod | ✅ Dobrze udokumentowany |
+| Kod | ✅ Refaktoryzacja zakończona |

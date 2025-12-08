@@ -47,7 +47,7 @@ public class ParameterRandomizer : MonoBehaviour
     [SerializeField] private bool allowThinUniform = true;
     [SerializeField] private bool allowNoTrail = false;
     
-    [Header("Rotation")]
+    [Header("Gap Movement")]
     [SerializeField] private FloatRange rotationSpeed = new FloatRange(30f, 90f);
     
     [Header("Gap")]
@@ -61,8 +61,8 @@ public class ParameterRandomizer : MonoBehaviour
     [SerializeField] private FloatRange ringRadius = new FloatRange(4.0f, 5.0f);
     
     [Header("Ellipse Size")]
-    [SerializeField] private FloatRange ellipseWidthRadius = new FloatRange(2.5f, 3.5f);
-    [SerializeField] private FloatRange ellipseHeightRadius = new FloatRange(4.5f, 5.5f);
+    [SerializeField] private FloatRange ellipseWidthRadius = new FloatRange(3.5f, 4.5f);
+    [SerializeField] private FloatRange ellipseHeightRadius = new FloatRange(6f, 8f);
     
     [Header("Ball")]
     [SerializeField] private FloatRange ballRadius = new FloatRange(0.2f, 0.35f, false); // Disabled by default
@@ -238,8 +238,8 @@ public class ParameterRandomizer : MonoBehaviour
         gravity = new FloatRange(-25f, -15f);
         bounciness = new FloatRange(0.7f, 1.0f);
         ringRadius = new FloatRange(4.0f, 5.0f);
-        ellipseWidthRadius = new FloatRange(2.5f, 3.5f);
-        ellipseHeightRadius = new FloatRange(4.5f, 5.5f);
+        ellipseWidthRadius = new FloatRange(3.5f, 4.5f);
+        ellipseHeightRadius = new FloatRange(6f, 8f);
         ballRadius = new FloatRange(0.2f, 0.35f, false);
         trailTime = new FloatRange(0.15f, 0.4f, false);
         trailWidthMultiplier = new FloatRange(0.6f, 1.2f, false);

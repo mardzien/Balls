@@ -68,7 +68,7 @@ public class GameSettings : ScriptableObject
     [Range(10f, 90f)]
     public float gapAngleDegrees = 30f;
     
-    [Tooltip("Prędkość obrotu kształtu w stopniach na sekundę")]
+    [Tooltip("Prędkość wędrowania luki w stopniach na sekundę")]
     public float rotationSpeed = 45f;
     
     [Tooltip("Kolor kształtu")]
@@ -79,17 +79,10 @@ public class GameSettings : ScriptableObject
     
     [Header("Ellipse Settings")]
     [Tooltip("Promień poziomy elipsy (oś X)")]
-    public float ellipseWidthRadius = 3f;
+    public float ellipseWidthRadius = 4f;
     
     [Tooltip("Promień pionowy elipsy (oś Y)")]
-    public float ellipseHeightRadius = 5f;
-    
-    [Header("Traveling Gap (Wędrująca Luka)")]
-    [Tooltip("Włącz wędrującą lukę (luka przesuwa się po obwodzie niezależnie od rotacji)")]
-    public bool enableTravelingGap = false;
-    
-    [Tooltip("Prędkość wędrowania luki w stopniach na sekundę")]
-    public float gapTravelSpeed = 30f;
+    public float ellipseHeightRadius = 7f;
     
     [Header("Ball Settings")]
     [Tooltip("Promień kulki (0.25 = dobrze widoczna)")]
@@ -103,15 +96,9 @@ public class GameSettings : ScriptableObject
     [Range(0f, 1f)]
     public float friction = 0.1f;
     
-    [Tooltip("Domyślny kolor kulki (gdy useRandomBallColors = false)")]
-    public Color ballColor = new Color(1f, 0.3f, 0.3f, 1f);
-    
     [Header("Ball Freeze & Spawn")]
     [Tooltip("Czas życia kulki przed zamrożeniem (sekundy)")]
     public float ballFreezeTime = 3f;
-    
-    [Tooltip("Czy używać losowych jasnych kolorów dla kulek")]
-    public bool useRandomBallColors = true;
     
     [Tooltip("Minimalna jasność koloru kulki (HSV Value)")]
     [Range(0.5f, 1f)]
@@ -148,10 +135,6 @@ public class GameSettings : ScriptableObject
     
     [Tooltip("Włącz randomizację parametrów między rundami")]
     public bool enableParameterRandomization = true;
-    
-    // Legacy - kept for backwards compatibility
-    [HideInInspector]
-    public bool autoRecording = true;
     
     [Header("Spawn Settings")]
     [Tooltip("Minimalny kąt spawnu (stopnie, 0=prawo, 90=góra)")]
@@ -209,19 +192,14 @@ public class GameSettings : ScriptableObject
         ringVerticalOffset = -1.5f;
         
         // Ellipse
-        ellipseWidthRadius = 3f;
-        ellipseHeightRadius = 5f;
-        
-        // Traveling Gap
-        enableTravelingGap = false;
-        gapTravelSpeed = 30f;
+        ellipseWidthRadius = 4f;
+        ellipseHeightRadius = 7f;
         
         // Ball
         ballRadius = 0.25f;
         bounciness = 0.8f;
         friction = 0.1f;
         ballFreezeTime = 3f;
-        useRandomBallColors = true;
         ballColorMinBrightness = 0.8f;
         ballColorMinSaturation = 0.7f;
         
@@ -238,7 +216,6 @@ public class GameSettings : ScriptableObject
         minRecordingLength = 15f;
         maxRecordingLength = 40f;
         enableParameterRandomization = true;
-        autoRecording = true;
         
         // Spawn
         spawnAngleMin = 45f;

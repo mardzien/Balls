@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Pierścień z luką - obraca się i ma kolizję dla kulki.
+/// Pierścień z wędrującą luką - kształt nie obraca się, tylko luka wędruje po obwodzie.
 /// Używa LineRenderer do wizualizacji i EdgeCollider2D do fizyki.
 /// Kolizja jest na środkowym promieniu pierścienia.
 /// Dziedziczy z SpawnShape.
@@ -11,16 +11,10 @@ public class Ring : SpawnShape
     // Liczba segmentów do rysowania łuku (więcej = gładszy)
     private const int SEGMENTS_PER_DEGREE = 1;
     
-    private float _currentAngle;
-    
     /// <summary>
-    /// Aktualny kąt rotacji pierścienia w stopniach.
+    /// Nieużywany - pierścień nie obraca się, tylko luka wędruje.
     /// </summary>
-    public override float CurrentAngle 
-    { 
-        get => _currentAngle; 
-        protected set => _currentAngle = value; 
-    }
+    public override float CurrentAngle { get; protected set; }
     
     /// <summary>
     /// Wewnętrzny promień pierścienia (wizualna wewnętrzna krawędź).
@@ -33,14 +27,14 @@ public class Ring : SpawnShape
     public override float OuterRadius => settings != null ? settings.ringRadius + settings.ringThickness / 2f : 3.5f;
     
     /// <summary>
-    /// Kąt początku luki w stopniach (względem aktualnej rotacji).
+    /// Kąt początku luki w stopniach.
     /// </summary>
-    public override float GapStartAngle => GetEffectiveGapBaseAngle() + CurrentAngle - settings.gapAngleDegrees / 2f;
+    public override float GapStartAngle => GetEffectiveGapBaseAngle() - settings.gapAngleDegrees / 2f;
     
     /// <summary>
-    /// Kąt końca luki w stopniach (względem aktualnej rotacji).
+    /// Kąt końca luki w stopniach.
     /// </summary>
-    public override float GapEndAngle => GetEffectiveGapBaseAngle() + CurrentAngle + settings.gapAngleDegrees / 2f;
+    public override float GapEndAngle => GetEffectiveGapBaseAngle() + settings.gapAngleDegrees / 2f;
     
     /// <summary>
     /// Zwraca promień pierścienia (środkowy).
@@ -90,12 +84,9 @@ public class Ring : SpawnShape
         // Kolizja na środku pierścienia dla lepszego efektu wizualnego
         float collisionRadius = settings.ringRadius;
         
-        // Bazowy kąt luki (uwzględnia wędrującą lukę)
-        float gapBaseAngle = settings.enableTravelingGap ? GapAngle : 0f;
-        
         // Rozpocznij od połowy luki (luka będzie na górze w pozycji startowej)
         // Kąt 90 stopni = góra
-        float startAngle = 90f + gapBaseAngle + settings.gapAngleDegrees / 2f;
+        float startAngle = 90f + GapAngle + settings.gapAngleDegrees / 2f;
         float angleStep = arcAngle / segments;
         
         for (int i = 0; i <= segments; i++)

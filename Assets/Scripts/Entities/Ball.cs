@@ -67,7 +67,7 @@ public class Ball : MonoBehaviour
     /// <summary>
     /// Inicjalizuje kulkę z podanymi ustawieniami.
     /// </summary>
-    public void Initialize(GameSettings gameSettings, bool randomColor = true)
+    public void Initialize(GameSettings gameSettings)
     {
         settings = gameSettings;
         isFrozen = false;
@@ -79,7 +79,7 @@ public class Ball : MonoBehaviour
         if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
         
         SetupPhysics();
-        SetupVisuals(randomColor);
+        SetupVisuals();
     }
     
     private void SetupPhysics()
@@ -103,15 +103,12 @@ public class Ball : MonoBehaviour
         rb.angularVelocity = 0f;
     }
     
-    private void SetupVisuals(bool randomColor)
+    private void SetupVisuals()
     {
         float diameter = settings.ballRadius * 2f;
         transform.localScale = new Vector3(diameter, diameter, 1f);
         
-        ballColor = (randomColor && settings.useRandomBallColors) 
-            ? GenerateRandomBrightColor() 
-            : settings.ballColor;
-            
+        ballColor = GenerateRandomBrightColor();
         spriteRenderer.color = ballColor;
         
         // Setup trail effect

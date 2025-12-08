@@ -14,28 +14,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameSettings
   cameraOrthoSize: 10
   forceResolution: 1
-  shapeType: 1
-  ringRadius: 4.5
-  ringThickness: 0.15
-  gapAngleDegrees: 30
-  rotationSpeed: 100
-  ringColor: {r: 1, g: 0.03393931, b: 0, a: 1}
+  shapeType: 0
+  ringRadius: 4.240429
+  ringThickness: 0.3
+  gapAngleDegrees: 30.206036
+  rotationSpeed: 43.23922
+  ringColor: {r: 1, g: 1, b: 1, a: 1}
   ringVerticalOffset: -1.5
-  ellipseWidthRadius: 3
-  ellipseHeightRadius: 5
-  enableTravelingGap: 1
-  gapTravelSpeed: 40
-  ballRadius: 0.3
-  bounciness: 1
+  ellipseWidthRadius: 4.31394
+  ellipseHeightRadius: 6.003443
+  ballRadius: 0.25
+  bounciness: 0.8853643
   friction: 0.1
-  ballColor: {r: 0.098022126, g: 0.029903898, b: 0.9056604, a: 1}
   ballFreezeTime: 3
-  useRandomBallColors: 1
   ballColorMinBrightness: 0.8
   ballColorMinSaturation: 0.7
-  gravity: -19.81
+  gravity: -19.637817
   gameOverAnimationDuration: 2
-  autoRecording: 1
+  recordingMode: 2
+  autoStartRecording: 1
+  batchDuration: 1800
+  minRecordingLength: 15
+  maxRecordingLength: 40
+  enableParameterRandomization: 1
   spawnAngleMin: 45
   spawnAngleMax: 135
   spawnRadiusPercent: 0.5

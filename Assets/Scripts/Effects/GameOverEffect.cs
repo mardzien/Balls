@@ -4,7 +4,6 @@ using UnityEngine;
 /// <summary>
 /// Efekty końcowe gry - rozpad kulek i kształtu spawnu na cząsteczki.
 /// Obsługuje typy kształtów Ring i Ellipse.
-/// Uwzględnia aktualną rotację kształtu.
 /// </summary>
 public class GameOverEffect : MonoBehaviour
 {
@@ -122,8 +121,7 @@ public class GameOverEffect : MonoBehaviour
         float arcAngle = 360f - gapAngle;
         
         // Bazowy kąt luki (uwzględnia wędrującą lukę)
-        float gapBaseAngle = settings.enableTravelingGap ? shape.GapAngle : 0f;
-        float startAngle = 90f + gapBaseAngle + gapAngle / 2f;
+        float startAngle = 90f + shape.GapAngle + gapAngle / 2f;
         
         for (int i = 0; i < particleCount; i++)
         {
@@ -160,10 +158,10 @@ public class GameOverEffect : MonoBehaviour
                 );
                 
             case ShapeType.Ellipse:
-                // Elipsa - heightRadius na X, widthRadius na Y (pionowa orientacja - obrócona o 90 stopni)
+                // Elipsa pionowa - widthRadius na X (mniejszy), heightRadius na Y (większy)
                 return new Vector2(
-                    settings.ellipseHeightRadius * Mathf.Cos(angleRad),
-                    settings.ellipseWidthRadius * Mathf.Sin(angleRad)
+                    settings.ellipseWidthRadius * Mathf.Cos(angleRad),
+                    settings.ellipseHeightRadius * Mathf.Sin(angleRad)
                 );
                 
             default:

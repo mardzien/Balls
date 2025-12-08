@@ -14,9 +14,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private RecordingController recordingController;
     [SerializeField] private BatchRecordingController batchRecordingController;
     
-    // Backwards compatibility - jeśli w scenie jest stary Ring, użyj go
-    [SerializeField] private Ring legacyRing;
-    
     // Track current shape type for recreation
     private ShapeType currentShapeType;
     
@@ -46,11 +43,6 @@ public class GameManager : MonoBehaviour
     /// Aktualny kształt spawnu (Ring lub Ellipse).
     /// </summary>
     public SpawnShape Shape => shape;
-    
-    /// <summary>
-    /// Backwards compatibility - zwraca Ring jeśli aktualny kształt to Ring.
-    /// </summary>
-    public Ring Ring => shape as Ring;
     
     private void Start()
     {
@@ -84,12 +76,6 @@ public class GameManager : MonoBehaviour
     {
         Physics2D.gravity = new Vector2(0, settings.gravity);
         
-        // Backwards compatibility - użyj starego Ring jeśli jest przypisany
-        if (shape == null && legacyRing != null)
-        {
-            shape = legacyRing;
-        }
-        
         // Utwórz nowy kształt jeśli nie ma żadnego
         if (shape == null)
         {
@@ -114,10 +100,14 @@ public class GameManager : MonoBehaviour
             }
         }
         
-        // Find BatchRecordingController if exists
+        // Find or create BatchRecordingController for Batch mode
         if (batchRecordingController == null)
         {
             batchRecordingController = FindAnyObjectByType<BatchRecordingController>();
+            if (batchRecordingController == null && settings.recordingMode == RecordingMode.Batch)
+            {
+                batchRecordingController = gameObject.AddComponent<BatchRecordingController>();
+            }
         }
     }
     
@@ -205,7 +195,7 @@ public class GameManager : MonoBehaviour
         Ball ball = ballObj.AddComponent<Ball>();
         
         sr.sprite = SpriteUtility.GetBallSprite();
-        ball.Initialize(settings, settings.useRandomBallColors);
+        ball.Initialize(settings);
         
         Vector2 spawnPos = shape.GetRandomSpawnPosition();
         ball.transform.position = new Vector3(spawnPos.x, spawnPos.y, 0);

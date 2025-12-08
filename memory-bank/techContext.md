@@ -10,7 +10,7 @@
 ### Graphics & Rendering
 - **Camera**: Orthographic, size 10 (20 jednostek wysokości)
 - **Resolution**: 1080x1920 (YouTube Shorts 9:16)
-- **LineRenderer**: Dla rysowania pierścienia
+- **LineRenderer**: Dla rysowania pierścienia/elipsy
 - **SpriteRenderer**: Dla kulki (proceduralna tekstura)
 - **TrailRenderer**: Dla efektów ogonków piłek
 
@@ -36,11 +36,13 @@ Assets/
 ├── Scripts/
 │   ├── Core/
 │   │   ├── GameManager.cs      # Główny manager, auto-create components
-│   │   ├── GameSettings.cs     # ScriptableObject z konfiguracją + Trail settings
+│   │   ├── GameSettings.cs     # ScriptableObject z konfiguracją
 │   │   └── ScreenSetup.cs      # Konfiguracja ekranu 9:16
 │   ├── Entities/
-│   │   ├── Ring.cs             # Pierścień z luką + SetVisible()
-│   │   └── Ball.cs             # Kulka z fizyką + BallTrailEffect integration
+│   │   ├── SpawnShape.cs       # Bazowa klasa abstrakcyjna dla kształtów
+│   │   ├── Ring.cs             # Pierścień z wędrującą luką
+│   │   ├── EllipseShape.cs     # Elipsa z wędrującą luką
+│   │   └── Ball.cs             # Kulka z fizyką + BallTrailEffect
 │   ├── Effects/
 │   │   ├── GameOverEffect.cs   # Efekty końcowe (fragmenty + pył)
 │   │   └── BallTrailEffect.cs  # Efekty ogonków (TrailRenderer + particles)
@@ -71,16 +73,20 @@ WORLD_WIDTH = 11.25
 
 // Core settings
 ringRadius = 4.5
-ringThickness = 0.2
-ballRadius = 0.3
+ringThickness = 0.3
+ballRadius = 0.25
 gapAngleDegrees = 30
-rotationSpeed = 100     // stopni/s
-bounciness = 1.0
-gravity = -19.81        // podwójna grawitacja
+rotationSpeed = 45      // prędkość wędrującej luki (stopni/s)
+bounciness = 0.8
+gravity = -9.81
 ballFreezeTime = 3      // sekundy
 escapeBuffer = 0.6
 
-// Trail Effect settings (NOWE)
+// Ball color settings (zawsze losowe)
+ballColorMinBrightness = 0.8
+ballColorMinSaturation = 0.7
+
+// Trail Effect settings
 trailStyle = TrailStyle.FadingTrail
 trailTime = 0.25f       // sekundy
 trailWidthMultiplier = 0.8f
@@ -89,16 +95,36 @@ trailWidthMultiplier = 0.8f
 ringParticleCount = 150  // cząsteczki pyłu
 ```
 
-### Ball.cs - Kluczowe metody
+### SpawnShape.cs - Bazowa klasa kształtów
 ```csharp
-Initialize()          // Setup fizyki, wizualizacji i trail effect
-Freeze()              // Zamrożenie (Static) + SetFrozen na trail
-Unfreeze()            // Odmrożenie (Dynamic)
-DisableFreezeTimer()  // Wyłącza auto-freeze (dla uciekającej piłki)
-SetupTrailEffect()    // Konfiguracja ogonka
+// Właściwości abstrakcyjne
+CurrentAngle          // Nieużywany - kształty nie rotują
+GapAngle              // Pozycja wędrującej luki
+InnerRadius           // Wewnętrzny promień
+OuterRadius           // Zewnętrzny promień
+GapStartAngle         // Początek luki
+GapEndAngle           // Koniec luki
+
+// Kluczowe metody
+Initialize()          // Setup kształtu
+UpdateGapPosition()   // Aktualizacja pozycji luki
+GenerateShape()       // Generowanie geometrii
+ResetRotation()       // Reset pozycji luki
+SetVisible()          // Ukryj/pokaż
 ```
 
-### BallTrailEffect.cs - System ogonków (NOWY)
+### Ball.cs - Kluczowe metody
+```csharp
+Initialize(settings)  // Setup fizyki, wizualizacji, losowy kolor
+Freeze()              // Zamrożenie (Static) + SetFrozen na trail
+DisableFreezeTimer()  // Wyłącza auto-freeze (dla uciekającej piłki)
+SetupTrailEffect()    // Konfiguracja ogonka
+
+// Kolory są ZAWSZE losowe (usunięto ballColor i useRandomBallColors)
+GenerateRandomBrightColor()  // HSV z min brightness i saturation
+```
+
+### BallTrailEffect.cs - System ogonków
 ```csharp
 // Enum TrailStyle
 None           // Bez ogonka
@@ -111,28 +137,15 @@ Initialize()           // Setup stylu, koloru, czasu
 SetFrozen()            // Zatrzymuje emisję drobin
 UpdateColor()          // Aktualizacja koloru przy zamrożeniu
 ClearAllCometParticles() // Czyści wszystkie drobinki (static)
-
-// Position History System
-Queue<PositionRecord>  // Historia pozycji piłki
-GetTailPosition()      // Rzeczywista pozycja końca ogona
 ```
 
-### Ring.cs - Kluczowe metody
+### Ring.cs / EllipseShape.cs - Kształty z wędrującą luką
 ```csharp
-Initialize()          // Setup pierścienia
-SetColor()            // Zmiana koloru
-SetVisible()          // Ukryj/pokaż (dla efektu końcowego)
-IsInGap()             // Czy kąt jest w luce
-GetRandomSpawnPosition()  // Pozycja spawnu piłki
-```
-
-### GameOverEffect.cs - Efekty
-```csharp
-fragmentsPerBall = 16        // Fragmentów na kulkę
-ringParticleCount = 150      // Z GameSettings (konfigurowalne)
-explosionForce = 6           // Siła eksplozji
-ringExplosionForce = 3       // Siła rozpadu pierścienia
-BallTrailEffect.ClearAllCometParticles()  // Cleanup przy restarcie
+// Wspólne cechy (dziedziczą z SpawnShape)
+- Kształt NIE obraca się wokół własnej osi
+- Luka wędruje po obwodzie z prędkością rotationSpeed
+- GenerateShape() regeneruje geometrię przy każdej aktualizacji luki
+- GapAngle przechowuje aktualną pozycję luki
 ```
 
 ### Input System
@@ -165,29 +178,27 @@ BallTrailEffect.ClearAllCometParticles()  // Cleanup przy restarcie
 - **Recording**: 60 FPS bez frame drops
 - **Memory**: Niskie zużycie (prosta gra 2D)
 
-## 🔄 Recent Technical Changes (2025-12-02)
-
-### Trail Effect System (NOWE)
-1. **BallTrailEffect.cs**: Nowy komponent zarządzający TrailRenderer
-2. **TrailStyle enum**: None, Comet, FadingTrail, ThinUniform
-3. **Position History**: Queue<PositionRecord> do śledzenia rzeczywistej ścieżki piłki
-4. **Comet Particles**: Drobinki spawnujące się z końca ogona (nie z piłki!)
-5. **Frozen State**: Zamrożone piłki nie emitują drobin
-
-### Ball.cs Integration
-1. **RequireComponent**: TrailRenderer + BallTrailEffect
-2. **SetupTrailEffect()**: Inicjalizacja w SetupVisuals
-3. **Freeze()**: Wywołuje trailEffect.SetFrozen(true)
-
-### GameSettings Extensions
-1. **trailStyle**: TrailStyle.FadingTrail (domyślnie)
-2. **trailTime**: 0.25f sekundy
-3. **trailWidthMultiplier**: 0.8f
-4. **ringParticleCount**: 150 (Game Over particles)
-
 ## 🔄 Recent Technical Changes (2025-12-08)
 
-### Batch Recording System (NOWE)
+### Refaktoryzacja - uproszczenie kodu
+1. **Usunięte parametry**:
+   - `ballColor` - kolory zawsze losowe
+   - `useRandomBallColors` - zawsze true
+   - `enableTravelingGap` - zawsze włączona wędrująca luka
+   - `gapTravelSpeed` - teraz używa `rotationSpeed`
+   - `legacyRing` - usunięty legacy kod
+   - `autoRecording` - usunięty legacy kod
+
+2. **Uproszczony system wędrującej luki**:
+   - Kształty (Ring, Ellipse) nie obracają się wokół osi
+   - Luka wędruje po obwodzie z prędkością `rotationSpeed`
+   - Jeden parametr dla obu typów kształtów
+
+3. **Ball.cs**:
+   - `Initialize()` bez parametru randomColor
+   - Kolory zawsze generowane losowo
+
+### Batch Recording System
 1. **BatchRecordingController.cs**: Automatyczne nagrywanie wielu rund
    - Filtrowanie po długości (15-40s domyślnie)
    - Automatyczne usuwanie za krótkich/długich nagrań
@@ -197,7 +208,7 @@ BallTrailEffect.ClearAllCometParticles()  // Cleanup przy restarcie
 2. **ParameterRandomizer.cs**: Randomizacja parametrów gry
    - ShapeType (Ring/Ellipse)
    - TrailStyle (Comet/FadingTrail/ThinUniform)
-   - rotationSpeed (30-90)
+   - rotationSpeed (30-90) - prędkość wędrującej luki
    - gapAngleDegrees (20-45)
    - gravity (-25 do -15)
    - bounciness (0.7-1.0)

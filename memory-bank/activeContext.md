@@ -1,79 +1,89 @@
 # Active Context: Current Work Focus
 
-## 🎯 Current Session Summary (2025-12-02)
+## 🎯 Current Session Summary (2025-12-08)
 
 ### Co zostało zrobione w tej sesji:
-1. **Dodano system efektów ogonków (Trail Effects)** - trzy style do wyboru
-2. **Styl Kometa** - cienki przy piłce, gruby na końcu + sypające się drobinki
-3. **Styl Zanikający** - jasny przy piłce, przezroczysty dalej
-4. **Styl Jednolity** - stała szerokość i jasność
-5. **Zwiększono liczbę cząsteczek Game Over** - konfigurowalny ringParticleCount (150)
-6. **System śledzenia pozycji** - historia pozycji dla dokładnego spawn drobin
+1. **System Batch Recording** - automatyczne nagrywanie wielu rund z filtrowaniem
+2. **BatchRecordingController.cs** - zarządza sesją nagrywania batch
+   - Filtrowanie po długości (15-40s domyślnie)
+   - Automatyczne usuwanie za krótkich/długich nagrań
+   - Statystyki (udane, odrzucone, procent sukcesu)
+   - Limit czasu sesji (domyślnie 30 minut)
+3. **ParameterRandomizer.cs** - randomizacja parametrów przed każdą rundą
+   - Typ kształtu (Ring/Ellipse)
+   - Styl ogonka (Comet/FadingTrail/ThinUniform)
+   - Prędkość rotacji, kąt luki, grawitacja, bounciness
+   - Rozmiary kształtów (promienie)
+4. **Integracja z GameManager** - automatyczne odtwarzanie kształtu przy zmianie typu
 
 ### Aktualny stan:
-- ✅ Gra działa poprawnie
-- ✅ Efekty ogonków działają dla wszystkich stylów
-- ✅ Kometa ma sypące się drobinki z końca ogona
-- ✅ Zamrożone piłki nie emitują drobin
-- ✅ Efekt końcowy z większą liczbą cząsteczek
+- ✅ BatchRecordingController działa (F10 start/stop)
+- ✅ ParameterRandomizer randomizuje parametry między rundami
+- ✅ Filtrowanie nagrań po długości (15-40s)
+- ✅ Automatyczne usuwanie niepoprawnych nagrań
+- ✅ Dynamiczne odtwarzanie kształtu przy zmianie typu
+- ✅ Kompilacja bez błędów
 
 ## 📁 Struktura plików
 
 ```
 Assets/Scripts/
 ├── Core/
-│   ├── GameManager.cs      # Główny kontroler, auto-tworzenie komponentów
-│   ├── GameSettings.cs     # Konfiguracja (ScriptableObject) + Trail settings
+│   ├── GameManager.cs      # Główny kontroler + integracja batch recording
+│   ├── GameSettings.cs     # Konfiguracja (ScriptableObject)
 │   └── ScreenSetup.cs      # Setup ekranu 9:16
 ├── Entities/
-│   ├── Ring.cs             # Pierścień z luką, SetVisible()
-│   └── Ball.cs             # Kulka z fizyką + BallTrailEffect
+│   ├── Ring.cs             # Pierścień z luką
+│   ├── EllipseShape.cs     # Elipsa z luką
+│   └── Ball.cs             # Kulka z fizyką
 ├── Effects/
-│   ├── GameOverEffect.cs   # Efekty końcowe (fragmenty + pył pierścienia)
-│   └── BallTrailEffect.cs  # NOWY: Efekty ogonków (TrailRenderer)
+│   ├── GameOverEffect.cs   # Efekty końcowe
+│   └── BallTrailEffect.cs  # Efekty ogonków
 ├── Utils/
 │   └── SpriteUtility.cs    # Proceduralne sprite'y
 └── Recording/
-    ├── RecordingController.cs  # Nagrywanie (F9 + auto-start)
-    └── CollisionRecorder.cs    # Zapis kolizji
+    ├── RecordingController.cs      # Nagrywanie pojedyncze (F9)
+    ├── BatchRecordingController.cs # NOWY: Batch recording (F10)
+    ├── ParameterRandomizer.cs      # NOWY: Randomizacja parametrów
+    └── CollisionRecorder.cs        # Zapis kolizji do JSON
 ```
 
 ## 🎮 Sterowanie
 
 | Klawisz | Akcja |
 |---------|-------|
-| F9 | Start/Stop nagrywania (manualne) |
-| (auto) | Nagrywanie startuje automatycznie |
+| F9 | Start/Stop nagrywania pojedynczego (manualne) |
+| F10 | Start/Stop batch recording (automatyczne wiele rund) |
 
-## 📊 Parametry gry (aktualne w GameConfig)
+## 📊 Ustawienia nagrywania (w GameConfig)
 
-### Core
-| Parametr | Wartość | Opis |
-|----------|---------|------|
-| ringRadius | 4.5 | Promień pierścienia |
-| ringThickness | 0.2 | Grubość linii |
-| gapAngleDegrees | 30 | Kąt luki |
-| rotationSpeed | 100 | Stopni na sekundę |
-| ballRadius | 0.3 | Promień kulki |
-| bounciness | 1.0 | Współczynnik odbicia |
-| gravity | -19.81 | Grawitacja (podwójna) |
-| ballFreezeTime | 3 | Czas do zamrożenia |
-| escapeBuffer | 0.6 | Bufor detekcji ucieczki |
+| Parametr | Domyślna wartość | Opis |
+|----------|------------------|------|
+| recordingMode | Batch | None / Single / Batch |
+| autoStartRecording | true | Automatyczny start przy uruchomieniu gry |
+| batchDuration | 1800s (30 min) | Limit czasu sesji batch |
+| minRecordingLength | 15s | Minimalna długość rundy |
+| maxRecordingLength | 40s | Maksymalna długość rundy |
+| enableParameterRandomization | true | Czy randomizować parametry |
 
-### Trail Effect (NOWE)
-| Parametr | Wartość | Opis |
-|----------|---------|------|
-| trailStyle | FadingTrail | Styl ogonka (None/Comet/FadingTrail/ThinUniform) |
-| trailTime | 0.25 | Czas życia śladu (sekundy) |
-| trailWidthMultiplier | 0.8 | Mnożnik szerokości ogonka |
+## 🎲 Randomizowane parametry (zakresy domyślne)
 
-### Game Over Effects
-| Parametr | Wartość | Opis |
-|----------|---------|------|
-| ringParticleCount | 150 | Liczba cząsteczek pyłu pierścienia |
+| Parametr | Min | Max | Włączony |
+|----------|-----|-----|----------|
+| shapeType | Ring | Ellipse | ✅ |
+| trailStyle | Comet/Fading/Uniform | - | ✅ |
+| rotationSpeed | 30 | 90 | ✅ |
+| gapAngleDegrees | 20 | 45 | ✅ |
+| gravity | -25 | -15 | ✅ |
+| bounciness | 0.7 | 1.0 | ✅ |
+| ringRadius | 4.0 | 5.0 | ✅ |
+| ellipseWidthRadius | 2.5 | 3.5 | ✅ |
+| ellipseHeightRadius | 4.5 | 5.5 | ✅ |
+| ballRadius | 0.2 | 0.35 | ❌ |
+| trailTime | 0.15 | 0.4 | ❌ |
 
 ## 🎯 Następne kroki
 
-1. **Testowanie efektów** - sprawdzenie wszystkich stylów ogonków
-2. **Dostrajanie parametrów** - optymalizacja wizualna
+1. **Testowanie batch recording** - uruchomić sesję i sprawdzić czy działa
+2. **Dostrajanie zakresów randomizacji** - optymalizacja dla najlepszych nagrań
 3. **Dźwięki** - efekty przy odbiciach

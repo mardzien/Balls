@@ -14,12 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameSettings
   cameraOrthoSize: 10
   forceResolution: 1
+  shapeType: 1
   ringRadius: 4.5
-  ringThickness: 0.2
+  ringThickness: 0.15
   gapAngleDegrees: 30
   rotationSpeed: 100
-  ringColor: {r: 1, g: 0, b: 0, a: 1}
+  ringColor: {r: 1, g: 0.03393931, b: 0, a: 1}
   ringVerticalOffset: -1.5
+  ellipseWidthRadius: 3
+  ellipseHeightRadius: 5
+  enableTravelingGap: 1
+  gapTravelSpeed: 40
   ballRadius: 0.3
   bounciness: 1
   friction: 0.1
@@ -35,3 +40,7 @@ MonoBehaviour:
   spawnAngleMax: 135
   spawnRadiusPercent: 0.5
   escapeBuffer: 0.6
+  trailStyle: 1
+  trailTime: 0.25
+  trailWidthMultiplier: 0.8
+  ringParticleCount: 150

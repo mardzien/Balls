@@ -10,6 +10,16 @@ public enum ShapeType
 }
 
 /// <summary>
+/// Tryb nagrywania.
+/// </summary>
+public enum RecordingMode
+{
+    None,           // Bez nagrywania
+    Single,         // Pojedyncze nagranie (stary tryb, F9)
+    Batch           // Batch recording z filtrowaniem (automatyczny start)
+}
+
+/// <summary>
 /// Konfiguracja parametrów gry - ScriptableObject do łatwej edycji w inspektorze.
 /// </summary>
 [CreateAssetMenu(fileName = "GameConfig", menuName = "Ball Engine/Game Settings")]
@@ -119,7 +129,28 @@ public class GameSettings : ScriptableObject
     [Tooltip("Czas animacji końcowej przed restartem (sekundy)")]
     public float gameOverAnimationDuration = 2f;
     
-    [Tooltip("Czy automatycznie nagrywać")]
+    [Header("Recording")]
+    [Tooltip("Tryb nagrywania: None = wyłączone, Single = pojedyncze (F9), Batch = automatyczne wiele rund")]
+    public RecordingMode recordingMode = RecordingMode.Batch;
+    
+    [Tooltip("Czy automatycznie rozpocząć nagrywanie przy starcie gry")]
+    public bool autoStartRecording = true;
+    
+    [Header("Batch Recording Settings")]
+    [Tooltip("Całkowity czas sesji batch w sekundach (1800 = 30 minut)")]
+    public float batchDuration = 1800f;
+    
+    [Tooltip("Minimalna długość nagrania w sekundach")]
+    public float minRecordingLength = 15f;
+    
+    [Tooltip("Maksymalna długość nagrania w sekundach")]
+    public float maxRecordingLength = 40f;
+    
+    [Tooltip("Włącz randomizację parametrów między rundami")]
+    public bool enableParameterRandomization = true;
+    
+    // Legacy - kept for backwards compatibility
+    [HideInInspector]
     public bool autoRecording = true;
     
     [Header("Spawn Settings")]
@@ -199,6 +230,14 @@ public class GameSettings : ScriptableObject
         
         // Game Loop
         gameOverAnimationDuration = 2f;
+        
+        // Recording
+        recordingMode = RecordingMode.Batch;
+        autoStartRecording = true;
+        batchDuration = 1800f;
+        minRecordingLength = 15f;
+        maxRecordingLength = 40f;
+        enableParameterRandomization = true;
         autoRecording = true;
         
         // Spawn

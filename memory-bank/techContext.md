@@ -26,7 +26,8 @@
 - **Codec**: WebM (MP4 nie działa na Linux)
 - **Quality**: High
 - **FPS**: 60
-- **Auto-start**: Nagrywanie startuje z grą
+- **Single Recording**: F9, auto-start z grą (RecordingController)
+- **Batch Recording**: F10, wiele rund z filtrowaniem (BatchRecordingController)
 
 ## 📁 Project Structure
 
@@ -46,8 +47,10 @@ Assets/
 │   ├── Utils/
 │   │   └── SpriteUtility.cs    # Proceduralne sprite'y (koła)
 │   └── Recording/
-│       ├── RecordingController.cs  # Sterowanie nagrywaniem
-│       └── CollisionRecorder.cs    # Zapis kolizji
+│       ├── RecordingController.cs      # Nagrywanie pojedyncze (F9)
+│       ├── BatchRecordingController.cs # Batch recording (F10)
+│       ├── ParameterRandomizer.cs      # Randomizacja parametrów
+│       └── CollisionRecorder.cs        # Zapis kolizji do JSON
 ├── Settings/
 │   └── (URP settings)
 ├── Scenes/
@@ -181,3 +184,26 @@ BallTrailEffect.ClearAllCometParticles()  // Cleanup przy restarcie
 2. **trailTime**: 0.25f sekundy
 3. **trailWidthMultiplier**: 0.8f
 4. **ringParticleCount**: 150 (Game Over particles)
+
+## 🔄 Recent Technical Changes (2025-12-08)
+
+### Batch Recording System (NOWE)
+1. **BatchRecordingController.cs**: Automatyczne nagrywanie wielu rund
+   - Filtrowanie po długości (15-40s domyślnie)
+   - Automatyczne usuwanie za krótkich/długich nagrań
+   - Limit czasu sesji (30 min domyślnie)
+   - Sterowanie: F10 start/stop
+   
+2. **ParameterRandomizer.cs**: Randomizacja parametrów gry
+   - ShapeType (Ring/Ellipse)
+   - TrailStyle (Comet/FadingTrail/ThinUniform)
+   - rotationSpeed (30-90)
+   - gapAngleDegrees (20-45)
+   - gravity (-25 do -15)
+   - bounciness (0.7-1.0)
+   - ringRadius, ellipseWidthRadius, ellipseHeightRadius
+
+3. **GameManager Integration**
+   - RecreateShape() - dynamiczne odtwarzanie kształtu przy zmianie typu
+   - Wsparcie dla BatchRecordingController
+   - Przekazywanie kolizji do obu kontrolerów nagrywania

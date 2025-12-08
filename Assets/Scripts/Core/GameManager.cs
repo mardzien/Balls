@@ -12,9 +12,13 @@ public class GameManager : MonoBehaviour
     [Header("Scene References")]
     [SerializeField] private SpawnShape shape;
     [SerializeField] private RecordingController recordingController;
+    [SerializeField] private BatchRecordingController batchRecordingController;
     
     // Backwards compatibility - jeśli w scenie jest stary Ring, użyj go
     [SerializeField] private Ring legacyRing;
+    
+    // Track current shape type for recreation
+    private ShapeType currentShapeType;
     
     private List<Ball> allBalls = new List<Ball>();
     private Ball activeBall;
@@ -92,6 +96,7 @@ public class GameManager : MonoBehaviour
             shape = CreateShape(settings.shapeType);
         }
         
+        currentShapeType = settings.shapeType;
         shape.Initialize(settings);
         
         // Auto-create components if needed
@@ -107,6 +112,12 @@ public class GameManager : MonoBehaviour
             {
                 recordingController = gameObject.AddComponent<RecordingController>();
             }
+        }
+        
+        // Find BatchRecordingController if exists
+        if (batchRecordingController == null)
+        {
+            batchRecordingController = FindAnyObjectByType<BatchRecordingController>();
         }
     }
     
@@ -136,6 +147,16 @@ public class GameManager : MonoBehaviour
         roundCount++;
         ClearAllBalls();
         
+        // Check if shape type changed (due to randomization) - recreate if needed
+        if (settings.shapeType != currentShapeType)
+        {
+            RecreateShape();
+        }
+        
+        // Update gravity in case it was randomized
+        Physics2D.gravity = new Vector2(0, settings.gravity);
+        
+        shape.Initialize(settings);
         shape.ResetRotation();
         shape.SetVisible(true);
         shape.SetColor(settings.ringColor);
@@ -143,14 +164,35 @@ public class GameManager : MonoBehaviour
         SpawnNewBall();
         currentState = GameState.Playing;
         
-        // Auto-start recording (once per session)
-        if (settings.autoRecording && recordingController != null && !hasRecordedThisSession)
+        // Auto-start single recording (once per session) - only if mode is Single
+        if (settings.recordingMode == RecordingMode.Single && 
+            settings.autoStartRecording && 
+            recordingController != null && 
+            !hasRecordedThisSession)
         {
             hasRecordedThisSession = true;
             recordingController.StartRecording();
         }
         
         OnGameRestart?.Invoke();
+    }
+    
+    /// <summary>
+    /// Odtwarza kształt gdy zmieni się typ (np. Ring -> Ellipse).
+    /// </summary>
+    private void RecreateShape()
+    {
+        Debug.Log($"[GameManager] Shape type changed: {currentShapeType} -> {settings.shapeType}");
+        
+        // Destroy old shape
+        if (shape != null)
+        {
+            Destroy(shape.gameObject);
+        }
+        
+        // Create new shape
+        shape = CreateShape(settings.shapeType);
+        currentShapeType = settings.shapeType;
     }
     
     private void SpawnNewBall()
@@ -178,10 +220,16 @@ public class GameManager : MonoBehaviour
     
     private void OnBallBounce(float relativeVelocity)
     {
-        // Przekaż zdarzenie kolizji do CollisionRecorder
+        // Przekaż zdarzenie kolizji do CollisionRecorder (standard recording)
         if (recordingController != null && recordingController.CollisionRecorder != null)
         {
             recordingController.CollisionRecorder.RecordCollision(relativeVelocity);
+        }
+        
+        // Przekaż zdarzenie kolizji do BatchRecordingController (batch recording)
+        if (batchRecordingController != null && batchRecordingController.CollisionRecorder != null)
+        {
+            batchRecordingController.CollisionRecorder.RecordCollision(relativeVelocity);
         }
     }
     
@@ -248,11 +296,14 @@ public class GameManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Zatrzymuje nagrywanie (wywoływane przez efekty końcowe).
+    /// Zatrzymuje nagrywanie pojedyncze (wywoływane przez efekty końcowe).
+    /// Nie dotyczy batch recording - tam nagrania są zarządzane automatycznie.
     /// </summary>
     public void StopRecordingIfNeeded()
     {
-        if (settings.autoRecording && recordingController != null && recordingController.IsRecording)
+        if (settings.recordingMode == RecordingMode.Single && 
+            recordingController != null && 
+            recordingController.IsRecording)
         {
             recordingController.StopRecording();
         }

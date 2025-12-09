@@ -90,7 +90,7 @@ public class GameSettings : ScriptableObject
     
     [Tooltip("Współczynnik odbicia (0-1, gdzie 1 = idealne odbicie)")]
     [Range(0f, 1f)]
-    public float bounciness = 0.8f;
+    public float bounciness = 1f;
     
     [Tooltip("Tarcie kulki")]
     [Range(0f, 1f)]
@@ -130,8 +130,8 @@ public class GameSettings : ScriptableObject
     [Tooltip("Minimalna długość nagrania w sekundach")]
     public float minRecordingLength = 15f;
     
-    [Tooltip("Maksymalna długość nagrania w sekundach")]
-    public float maxRecordingLength = 40f;
+    [Tooltip("Maksymalna długość nagrania w sekundach (rundy dłuższe są automatycznie przerywane)")]
+    public float maxRecordingLength = 50f;
     
     [Tooltip("Włącz randomizację parametrów między rundami")]
     public bool enableParameterRandomization = true;
@@ -197,7 +197,7 @@ public class GameSettings : ScriptableObject
         
         // Ball
         ballRadius = 0.25f;
-        bounciness = 0.8f;
+        bounciness = 1f;
         friction = 0.1f;
         ballFreezeTime = 3f;
         ballColorMinBrightness = 0.8f;
@@ -214,7 +214,7 @@ public class GameSettings : ScriptableObject
         autoStartRecording = true;
         batchDuration = 1800f;
         minRecordingLength = 15f;
-        maxRecordingLength = 40f;
+        maxRecordingLength = 50f;
         enableParameterRandomization = true;
         
         // Spawn

@@ -49,6 +49,13 @@ public abstract class SpawnShape : MonoBehaviour
     /// </summary>
     public abstract float GapEndAngle { get; }
     
+    // Cached shape dimensions (set during Initialize, used by GameOverEffect)
+    // These preserve the values at the time of initialization, avoiding issues
+    // when settings are randomized for the next round during current round's animation
+    public float CachedRingRadius { get; protected set; }
+    public float CachedEllipseWidthRadius { get; protected set; }
+    public float CachedEllipseHeightRadius { get; protected set; }
+    
     protected virtual void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
@@ -93,6 +100,12 @@ public abstract class SpawnShape : MonoBehaviour
     public virtual void Initialize(GameSettings gameSettings)
     {
         settings = gameSettings;
+        
+        // Cache dimensions at initialization time for GameOverEffect
+        // (settings may be randomized for next round before animation completes)
+        CachedRingRadius = gameSettings.ringRadius;
+        CachedEllipseWidthRadius = gameSettings.ellipseWidthRadius;
+        CachedEllipseHeightRadius = gameSettings.ellipseHeightRadius;
         
         if (lineRenderer == null) lineRenderer = GetComponent<LineRenderer>();
         if (edgeCollider == null) edgeCollider = GetComponent<EdgeCollider2D>();

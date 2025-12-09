@@ -165,6 +165,26 @@ public class BatchRecordingController : MonoBehaviour
             Debug.Log($"[BatchRecording] Batch time limit reached ({batchDuration}s)");
             StopBatch();
         }
+        
+        // Check round timeout - abort if exceeds maxRecordingLength
+        if (isBatchActive && isRecordingRound && gameManager != null && !gameManager.IsGameOver)
+        {
+            float roundDuration = Time.time - roundStartTime;
+            if (roundDuration > maxRecordingLength)
+            {
+                Debug.Log($"[BatchRecording] ⏱ Round timeout: {roundDuration:F1}s > {maxRecordingLength}s - ABORTING");
+                
+                // Cancel any pending delayed stops
+                CancelInvoke(nameof(StopAndKeepRecording));
+                CancelInvoke(nameof(StopAndDiscardRecording));
+                
+                StopRoundRecording(false); // Discard
+                discardedRecordings++;
+                totalRoundsPlayed++;
+                
+                gameManager.ForceRestart();
+            }
+        }
     }
 
 #if UNITY_EDITOR
@@ -259,6 +279,10 @@ public class BatchRecordingController : MonoBehaviour
             return;
         }
         
+        // Cancel any pending delayed recording stops
+        CancelInvoke(nameof(StopAndKeepRecording));
+        CancelInvoke(nameof(StopAndDiscardRecording));
+        
         // Stop current recording if active
         if (isRecordingRound)
         {
@@ -279,6 +303,7 @@ public class BatchRecordingController : MonoBehaviour
     
     /// <summary>
     /// Wywoływane gdy runda się kończy (piłka uciekła).
+    /// Opóźnia zatrzymanie nagrywania, żeby uwzględnić animację końcową.
     /// </summary>
     private void OnGameOver()
     {
@@ -289,19 +314,34 @@ public class BatchRecordingController : MonoBehaviour
         
         bool isValidLength = roundDuration >= minRecordingLength && roundDuration <= maxRecordingLength;
         
+        // Get animation duration to delay recording stop
+        float animationDuration = gameManager?.Settings?.gameOverAnimationDuration ?? 2f;
+        
         if (isValidLength)
         {
-            Debug.Log($"[BatchRecording] ✓ Round {totalRoundsPlayed}: {roundDuration:F1}s - KEPT");
-            StopRoundRecording(true);
+            Debug.Log($"[BatchRecording] ✓ Round {totalRoundsPlayed}: {roundDuration:F1}s - KEPT (waiting {animationDuration}s for animation)");
             successfulRecordings++;
+            // Delay stop to include game over animation
+            Invoke(nameof(StopAndKeepRecording), animationDuration);
         }
         else
         {
             string reason = roundDuration < minRecordingLength ? "too short" : "too long";
             Debug.Log($"[BatchRecording] ✗ Round {totalRoundsPlayed}: {roundDuration:F1}s - DISCARDED ({reason})");
-            StopRoundRecording(false);
             discardedRecordings++;
+            // Delay stop to include game over animation (even for discarded - cleaner transition)
+            Invoke(nameof(StopAndDiscardRecording), animationDuration);
         }
+    }
+    
+    private void StopAndKeepRecording()
+    {
+        StopRoundRecording(true);
+    }
+    
+    private void StopAndDiscardRecording()
+    {
+        StopRoundRecording(false);
     }
     
     /// <summary>
@@ -373,6 +413,66 @@ public class BatchRecordingController : MonoBehaviour
         if (!keepFiles && !string.IsNullOrEmpty(currentRecordingName))
         {
             DeleteRecordingFiles(currentRecordingName);
+        }
+        else if (keepFiles && !string.IsNullOrEmpty(currentRecordingName))
+        {
+            // Fix WebM metadata using ffmpeg (fast, just rewrites header)
+            FixWebMMetadata(currentRecordingName);
+        }
+    }
+    
+    /// <summary>
+    /// Naprawia metadane WebM używając ffmpeg -c copy (bardzo szybkie, ~1-2s).
+    /// Pozwala odtwarzaczom poprawnie wyświetlać czas trwania nagrania.
+    /// </summary>
+    private void FixWebMMetadata(string fileName)
+    {
+        string basePath = Path.Combine(Application.dataPath, "..", outputFolder);
+        string originalPath = Path.Combine(basePath, $"{fileName}.webm");
+        string tempPath = Path.Combine(basePath, $"{fileName}_temp.webm");
+        
+        if (!File.Exists(originalPath))
+        {
+            Debug.LogWarning($"[BatchRecording] Cannot fix metadata - file not found: {originalPath}");
+            return;
+        }
+        
+        try
+        {
+            // Run ffmpeg to fix metadata (codec copy = no re-encoding, very fast)
+            var process = new System.Diagnostics.Process();
+            process.StartInfo.FileName = "ffmpeg";
+            process.StartInfo.Arguments = $"-i \"{originalPath}\" -c copy -y \"{tempPath}\"";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.StartInfo.CreateNoWindow = true;
+            
+            process.Start();
+            process.WaitForExit(10000); // Max 10 seconds timeout
+            
+            if (process.ExitCode == 0 && File.Exists(tempPath))
+            {
+                // Replace original with fixed file
+                File.Delete(originalPath);
+                File.Move(tempPath, originalPath);
+                Debug.Log($"[BatchRecording] ✓ Fixed metadata: {fileName}.webm");
+            }
+            else
+            {
+                // Cleanup temp file if exists
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+                Debug.LogWarning($"[BatchRecording] ffmpeg failed (exit code: {process.ExitCode}) - keeping original file");
+            }
+        }
+        catch (System.Exception e)
+        {
+            // ffmpeg might not be installed - that's OK, just keep original file
+            if (File.Exists(tempPath)) 
+            {
+                try { File.Delete(tempPath); } catch { }
+            }
+            Debug.LogWarning($"[BatchRecording] ffmpeg not available or failed: {e.Message} - keeping original file");
         }
     }
     

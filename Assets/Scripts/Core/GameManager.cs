@@ -137,6 +137,10 @@ public class GameManager : MonoBehaviour
         roundCount++;
         ClearAllBalls();
         
+        // IMPORTANT: Invoke OnGameRestart FIRST so randomization happens BEFORE spawning
+        // This ensures the ball and all components use the correct settings for THIS round
+        OnGameRestart?.Invoke();
+        
         // Check if shape type changed (due to randomization) - recreate if needed
         if (settings.shapeType != currentShapeType)
         {
@@ -163,8 +167,6 @@ public class GameManager : MonoBehaviour
             hasRecordedThisSession = true;
             recordingController.StartRecording();
         }
-        
-        OnGameRestart?.Invoke();
     }
     
     /// <summary>
@@ -283,6 +285,16 @@ public class GameManager : MonoBehaviour
     private void OnDestroy()
     {
         ClearAllBalls();
+    }
+    
+    /// <summary>
+    /// Wymusza natychmiastowy restart rundy (bez animacji game over).
+    /// Używane przez BatchRecordingController gdy runda trwa za długo.
+    /// </summary>
+    public void ForceRestart()
+    {
+        currentState = GameState.Playing;
+        StartNewRound();
     }
     
     /// <summary>

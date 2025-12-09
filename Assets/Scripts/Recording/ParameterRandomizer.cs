@@ -55,7 +55,7 @@ public class ParameterRandomizer : MonoBehaviour
     
     [Header("Physics")]
     [SerializeField] private FloatRange gravity = new FloatRange(-25f, -15f);
-    [SerializeField] private FloatRange bounciness = new FloatRange(0.7f, 1.0f);
+    [SerializeField] private FloatRange bounciness = new FloatRange(0.7f, 1.0f, false); // Disabled - always use 1.0 for perfect bounce
     
     [Header("Ring Size")]
     [SerializeField] private FloatRange ringRadius = new FloatRange(4.0f, 5.0f);
@@ -236,7 +236,7 @@ public class ParameterRandomizer : MonoBehaviour
         rotationSpeed = new FloatRange(30f, 90f);
         gapAngleDegrees = new FloatRange(20f, 45f);
         gravity = new FloatRange(-25f, -15f);
-        bounciness = new FloatRange(0.7f, 1.0f);
+        bounciness = new FloatRange(0.7f, 1.0f, false); // Disabled - always use 1.0 for perfect bounce
         ringRadius = new FloatRange(4.0f, 5.0f);
         ellipseWidthRadius = new FloatRange(3.5f, 4.5f);
         ellipseHeightRadius = new FloatRange(6f, 8f);

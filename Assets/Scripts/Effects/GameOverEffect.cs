@@ -24,6 +24,12 @@ public class GameOverEffect : MonoBehaviour
     private float animationTime = 0f;
     private float animationDuration = 2f;
     
+    // Cached shape parameters (captured at animation start to avoid randomization issues)
+    private ShapeType cachedShapeType;
+    private float cachedRingRadius;
+    private float cachedEllipseWidthRadius;
+    private float cachedEllipseHeightRadius;
+    
     private void Start()
     {
         gameManager = GetComponent<GameManager>() ?? FindAnyObjectByType<GameManager>();
@@ -60,6 +66,24 @@ public class GameOverEffect : MonoBehaviour
         animationDuration = gameManager?.Settings?.gameOverAnimationDuration ?? 2f;
         
         if (shape == null) shape = gameManager?.Shape;
+        
+        // Cache shape parameters from the ACTUAL shape object (not settings!)
+        // Settings may have been randomized for the next round already
+        if (shape != null)
+        {
+            // Detect actual shape type from the object itself
+            if (shape is Ring)
+                cachedShapeType = ShapeType.Ring;
+            else if (shape is EllipseShape)
+                cachedShapeType = ShapeType.Ellipse;
+            else
+                cachedShapeType = ShapeType.Ring;
+            
+            // Use cached dimensions from shape (set when shape was initialized at round start)
+            cachedRingRadius = shape.CachedRingRadius;
+            cachedEllipseWidthRadius = shape.CachedEllipseWidthRadius;
+            cachedEllipseHeightRadius = shape.CachedEllipseHeightRadius;
+        }
         
         CreateBallFragments();
         CreateShapeParticles();
@@ -128,8 +152,8 @@ public class GameOverEffect : MonoBehaviour
             float progress = i / (float)particleCount;
             float localAngle = startAngle + progress * arcAngle;
             
-            // Pobierz punkt na kształcie w lokalnych współrzędnych
-            Vector2 localPoint = GetPointOnShape(settings, localAngle);
+            // Pobierz punkt na kształcie w lokalnych współrzędnych (używa cached parametrów)
+            Vector2 localPoint = GetPointOnShape(localAngle);
             
             // Transformuj przez rotację kształtu
             Vector3 worldPoint = shape.transform.TransformPoint(new Vector3(localPoint.x, localPoint.y, 0));
@@ -144,30 +168,31 @@ public class GameOverEffect : MonoBehaviour
     
     /// <summary>
     /// Zwraca punkt na kształcie dla danego kąta (w lokalnych współrzędnych kształtu).
+    /// Używa cached parametrów zapisanych na początku animacji.
     /// </summary>
-    private Vector2 GetPointOnShape(GameSettings settings, float angleDegrees)
+    private Vector2 GetPointOnShape(float angleDegrees)
     {
         float angleRad = angleDegrees * Mathf.Deg2Rad;
         
-        switch (settings.shapeType)
+        switch (cachedShapeType)
         {
             case ShapeType.Ring:
                 return new Vector2(
-                    settings.ringRadius * Mathf.Cos(angleRad),
-                    settings.ringRadius * Mathf.Sin(angleRad)
+                    cachedRingRadius * Mathf.Cos(angleRad),
+                    cachedRingRadius * Mathf.Sin(angleRad)
                 );
                 
             case ShapeType.Ellipse:
                 // Elipsa pionowa - widthRadius na X (mniejszy), heightRadius na Y (większy)
                 return new Vector2(
-                    settings.ellipseWidthRadius * Mathf.Cos(angleRad),
-                    settings.ellipseHeightRadius * Mathf.Sin(angleRad)
+                    cachedEllipseWidthRadius * Mathf.Cos(angleRad),
+                    cachedEllipseHeightRadius * Mathf.Sin(angleRad)
                 );
                 
             default:
                 return new Vector2(
-                    settings.ringRadius * Mathf.Cos(angleRad),
-                    settings.ringRadius * Mathf.Sin(angleRad)
+                    cachedRingRadius * Mathf.Cos(angleRad),
+                    cachedRingRadius * Mathf.Sin(angleRad)
                 );
         }
     }

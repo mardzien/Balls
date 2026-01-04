@@ -1,30 +1,26 @@
 # Active Context: Current Work Focus
 
-## 🎯 Current Session Summary (2025-12-08)
+## 🎯 Current Session Summary (2026-01-04)
 
 ### Co zostało zrobione w tej sesji:
-1. **Refaktoryzacja kodu** - uproszczenie i usunięcie nieużywanego kodu
-   - Usunięto `ballColor` i `useRandomBallColors` - kolory zawsze losowe
-   - Usunięto `enableTravelingGap` i `gapTravelSpeed` - teraz tylko wędrująca luka
-   - Usunięto legacy kod (`legacyRing`, `autoRecording`)
-   - `rotationSpeed` teraz oznacza prędkość wędrującej luki (nie rotację kształtu)
+1. **Refaktoryzacja randomizacji** - uproszczenie i dodanie koloru kształtu
+   - Usunięto randomizację `ringRadius`, `ellipseWidthRadius`, `ellipseHeightRadius`, `gravity`
+   - Dodano randomizację koloru pierścienia/elipsy (losowy jasny kolor HSV)
+   - Dodano pola `shapeColorMinBrightness` i `shapeColorMinSaturation` do GameSettings
 
-2. **System wędrującej luki** - uproszczony
-   - Kształty (Ring, Ellipse) nie obracają się wokół własnej osi
-   - Luka wędruje po obwodzie kształtu z zadaną prędkością
-   - Jeden parametr `rotationSpeed` dla obu typów kształtów
-
-3. **System Batch Recording** - automatyczne nagrywanie wielu rund z filtrowaniem
-4. **BatchRecordingController.cs** - zarządza sesją nagrywania batch
-5. **ParameterRandomizer.cs** - randomizacja parametrów przed każdą rundą
+2. **Poprzednie zmiany (2025-12-08)**:
+   - System wędrującej luki - kształty nie rotują, luka wędruje po obwodzie
+   - System Batch Recording z filtrowaniem po długości
+   - Losowe kolory piłek (zawsze)
 
 ### Aktualny stan:
 - ✅ BatchRecordingController działa (F10 start/stop)
 - ✅ ParameterRandomizer randomizuje parametry między rundami
+- ✅ Losowy kolor kształtu (pierścienia/elipsy) przy każdej rundzie
+- ✅ Stałe rozmiary kształtów i grawitacja
 - ✅ Filtrowanie nagrań po długości (15-40s)
 - ✅ Automatyczne usuwanie niepoprawnych nagrań
 - ✅ Dynamiczne odtwarzanie kształtu przy zmianie typu
-- ✅ Uproszczony system wędrującej luki (jeden parametr)
 - ✅ Losowe kolory piłek (zawsze)
 - ✅ Kompilacja bez błędów
 
@@ -76,18 +72,15 @@ Assets/Scripts/
 | Parametr | Min | Max | Włączony | Opis |
 |----------|-----|-----|----------|------|
 | shapeType | Ring | Ellipse | ✅ | Typ kształtu |
+| shapeColor | HSV random | - | ✅ | Losowy jasny kolor kształtu |
 | trailStyle | Comet/Fading/Uniform | - | ✅ | Styl ogonka |
 | rotationSpeed | 30 | 90 | ✅ | Prędkość wędrującej luki |
 | gapAngleDegrees | 20 | 45 | ✅ | Kąt luki |
-| gravity | -25 | -15 | ✅ | Grawitacja |
-| bounciness | 0.7 | 1.0 | ✅ | Współczynnik odbicia |
-| ringRadius | 4.0 | 5.0 | ✅ | Promień pierścienia |
-| ellipseWidthRadius | 2.5 | 3.5 | ✅ | Szerokość elipsy |
-| ellipseHeightRadius | 4.5 | 5.5 | ✅ | Wysokość elipsy |
+| bounciness | 0.7 | 1.0 | ❌ | Współczynnik odbicia (zawsze 1.0) |
 | ballRadius | 0.2 | 0.35 | ❌ | Promień piłki |
 | trailTime | 0.15 | 0.4 | ❌ | Czas ogonka |
 
-## 🔄 Usunięte parametry (refaktoryzacja)
+## 🔄 Usunięte parametry z randomizacji
 
 | Usunięty parametr | Powód |
 |-------------------|-------|
@@ -97,6 +90,10 @@ Assets/Scripts/
 | `gapTravelSpeed` | Używa teraz `rotationSpeed` |
 | `legacyRing` | Legacy backwards compatibility |
 | `autoRecording` | Legacy, nieużywany |
+| `ringRadius` | Stały rozmiar pierścienia (4.5) |
+| `ellipseWidthRadius` | Stały rozmiar elipsy (4.0) |
+| `ellipseHeightRadius` | Stały rozmiar elipsy (7.0) |
+| `gravity` | Stała grawitacja (-9.81) |
 
 ## 🎯 Następne kroki
 

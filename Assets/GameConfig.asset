@@ -15,21 +15,23 @@ MonoBehaviour:
   cameraOrthoSize: 10
   forceResolution: 1
   shapeType: 0
-  ringRadius: 4.958107
-  ringThickness: 0.3
-  gapAngleDegrees: 41.41137
-  rotationSpeed: 89.604805
-  ringColor: {r: 0, g: 0.43319815, b: 0.49056602, a: 1}
+  ringRadius: 5
+  ringThickness: 0.2
+  gapAngleDegrees: 34.228893
+  rotationSpeed: 58.656067
+  ringColor: {r: 0.042714726, g: 0.15183176, b: 0.9235048, a: 1}
+  shapeColorMinBrightness: 0.8
+  shapeColorMinSaturation: 0.7
   ringVerticalOffset: -1.5
-  ellipseWidthRadius: 3.5739417
-  ellipseHeightRadius: 6.9035215
-  ballRadius: 0.25
+  ellipseWidthRadius: 3.5
+  ellipseHeightRadius: 5
+  ballRadius: 0.2357167
   bounciness: 1
   friction: 0.1
-  ballFreezeTime: 3
+  ballFreezeTime: 4
   ballColorMinBrightness: 0.8
   ballColorMinSaturation: 0.7
-  gravity: -15.327511
+  gravity: 15
   gameOverAnimationDuration: 2
   recordingMode: 2
   autoStartRecording: 1

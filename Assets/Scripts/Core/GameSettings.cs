@@ -74,6 +74,14 @@ public class GameSettings : ScriptableObject
     [Tooltip("Kolor kształtu")]
     public Color ringColor = Color.white;
     
+    [Tooltip("Minimalna jasność koloru kształtu (HSV Value) - dla randomizacji")]
+    [Range(0.5f, 1f)]
+    public float shapeColorMinBrightness = 0.8f;
+    
+    [Tooltip("Minimalne nasycenie koloru kształtu (HSV Saturation) - dla randomizacji")]
+    [Range(0.5f, 1f)]
+    public float shapeColorMinSaturation = 0.7f;
+    
     [Tooltip("Przesunięcie kształtu w dół (jednostki Unity)")]
     public float ringVerticalOffset = -1.5f;
     
@@ -184,11 +192,13 @@ public class GameSettings : ScriptableObject
         shapeType = ShapeType.Ring;
         
         // Ring
-        ringRadius = 4.5f;
-        ringThickness = 0.3f;
+        ringRadius = 5f;
+        ringThickness = 0.15f;
         gapAngleDegrees = 30f;
         rotationSpeed = 45f;
         ringColor = Color.white;
+        shapeColorMinBrightness = 0.8f;
+        shapeColorMinSaturation = 0.7f;
         ringVerticalOffset = -1.5f;
         
         // Ellipse

@@ -47,25 +47,18 @@ public class ParameterRandomizer : MonoBehaviour
     [SerializeField] private bool allowThinUniform = true;
     [SerializeField] private bool allowNoTrail = false;
     
+    [Header("Shape Color")]
+    [Tooltip("Włącz losowanie koloru kształtu (pierścienia/elipsy)")]
+    [SerializeField] private bool randomizeShapeColor = true;
+    
     [Header("Gap Movement")]
     [SerializeField] private FloatRange rotationSpeed = new FloatRange(30f, 90f);
     
     [Header("Gap")]
     [SerializeField] private FloatRange gapAngleDegrees = new FloatRange(20f, 45f);
     
-    [Header("Physics")]
-    [SerializeField] private FloatRange gravity = new FloatRange(-25f, -15f);
-    [SerializeField] private FloatRange bounciness = new FloatRange(0.7f, 1.0f, false); // Disabled - always use 1.0 for perfect bounce
-    
-    [Header("Ring Size")]
-    [SerializeField] private FloatRange ringRadius = new FloatRange(4.0f, 5.0f);
-    
-    [Header("Ellipse Size")]
-    [SerializeField] private FloatRange ellipseWidthRadius = new FloatRange(3.5f, 4.5f);
-    [SerializeField] private FloatRange ellipseHeightRadius = new FloatRange(6f, 8f);
-    
     [Header("Ball")]
-    [SerializeField] private FloatRange ballRadius = new FloatRange(0.2f, 0.35f, false); // Disabled by default
+    [SerializeField] private FloatRange ballRadius = new FloatRange(0.2f, 0.35f, true); // Disabled by default
     
     [Header("Trail Effect")]
     [SerializeField] private FloatRange trailTime = new FloatRange(0.15f, 0.4f, false); // Disabled by default
@@ -102,6 +95,15 @@ public class ParameterRandomizer : MonoBehaviour
             log.AppendLine($"  - trailStyle: {settings.trailStyle}");
         }
         
+        // Shape Color
+        if (randomizeShapeColor)
+        {
+            settings.ringColor = GenerateRandomBrightColor(
+                settings.shapeColorMinBrightness, 
+                settings.shapeColorMinSaturation);
+            log.AppendLine($"  - shapeColor: {ColorUtility.ToHtmlStringRGB(settings.ringColor)}");
+        }
+        
         // Rotation Speed
         if (rotationSpeed.enabled)
         {
@@ -114,41 +116,6 @@ public class ParameterRandomizer : MonoBehaviour
         {
             settings.gapAngleDegrees = gapAngleDegrees.GetRandom();
             log.AppendLine($"  - gapAngleDegrees: {settings.gapAngleDegrees:F1}");
-        }
-        
-        // Gravity
-        if (gravity.enabled)
-        {
-            settings.gravity = gravity.GetRandom();
-            Physics2D.gravity = new Vector2(0, settings.gravity);
-            log.AppendLine($"  - gravity: {settings.gravity:F1}");
-        }
-        
-        // Bounciness
-        if (bounciness.enabled)
-        {
-            settings.bounciness = bounciness.GetRandom();
-            log.AppendLine($"  - bounciness: {settings.bounciness:F2}");
-        }
-        
-        // Ring Radius
-        if (ringRadius.enabled)
-        {
-            settings.ringRadius = ringRadius.GetRandom();
-            log.AppendLine($"  - ringRadius: {settings.ringRadius:F2}");
-        }
-        
-        // Ellipse Dimensions
-        if (ellipseWidthRadius.enabled)
-        {
-            settings.ellipseWidthRadius = ellipseWidthRadius.GetRandom();
-            log.AppendLine($"  - ellipseWidthRadius: {settings.ellipseWidthRadius:F2}");
-        }
-        
-        if (ellipseHeightRadius.enabled)
-        {
-            settings.ellipseHeightRadius = ellipseHeightRadius.GetRandom();
-            log.AppendLine($"  - ellipseHeightRadius: {settings.ellipseHeightRadius:F2}");
         }
         
         // Ball Radius
@@ -218,6 +185,18 @@ public class ParameterRandomizer : MonoBehaviour
     }
     
     /// <summary>
+    /// Generuje losowy jasny kolor używając przestrzeni HSV.
+    /// </summary>
+    private Color GenerateRandomBrightColor(float minBrightness, float minSaturation)
+    {
+        float hue = Random.Range(0f, 1f);
+        float saturation = Random.Range(minSaturation, 1f);
+        float brightness = Random.Range(minBrightness, 1f);
+        
+        return Color.HSVToRGB(hue, saturation, brightness);
+    }
+    
+    /// <summary>
     /// Resetuje wszystkie zakresy do wartości domyślnych.
     /// </summary>
     [ContextMenu("Reset to Defaults")]
@@ -233,14 +212,11 @@ public class ParameterRandomizer : MonoBehaviour
         allowThinUniform = true;
         allowNoTrail = false;
         
+        randomizeShapeColor = true;
+        
         rotationSpeed = new FloatRange(30f, 90f);
         gapAngleDegrees = new FloatRange(20f, 45f);
-        gravity = new FloatRange(-25f, -15f);
-        bounciness = new FloatRange(0.7f, 1.0f, false); // Disabled - always use 1.0 for perfect bounce
-        ringRadius = new FloatRange(4.0f, 5.0f);
-        ellipseWidthRadius = new FloatRange(3.5f, 4.5f);
-        ellipseHeightRadius = new FloatRange(6f, 8f);
-        ballRadius = new FloatRange(0.2f, 0.35f, false);
+        ballRadius = new FloatRange(0.2f, 0.35f, true);
         trailTime = new FloatRange(0.15f, 0.4f, false);
         trailWidthMultiplier = new FloatRange(0.6f, 1.2f, false);
         

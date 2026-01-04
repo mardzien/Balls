@@ -29,6 +29,10 @@ public class GameManager : MonoBehaviour
     private int roundCount = 0;
     private bool hasRecordedThisSession = false;
     
+    // Fixed spawn position for round (when fixedSpawnPosition is enabled)
+    private Vector2 cachedSpawnPosition;
+    private bool hasValidCachedSpawnPosition = false;
+    
     // Events
     public event System.Action OnGameOverStart;
     public event System.Action OnGameRestart;
@@ -155,6 +159,17 @@ public class GameManager : MonoBehaviour
         shape.SetVisible(true);
         shape.SetColor(settings.ringColor);
         
+        // Cache spawn position for the round if fixedSpawnPosition is enabled
+        if (settings.fixedSpawnPosition)
+        {
+            cachedSpawnPosition = shape.GetRandomSpawnPosition();
+            hasValidCachedSpawnPosition = true;
+        }
+        else
+        {
+            hasValidCachedSpawnPosition = false;
+        }
+        
         SpawnNewBall();
         currentState = GameState.Playing;
         
@@ -199,7 +214,10 @@ public class GameManager : MonoBehaviour
         sr.sprite = SpriteUtility.GetBallSprite();
         ball.Initialize(settings);
         
-        Vector2 spawnPos = shape.GetRandomSpawnPosition();
+        // Use cached position if fixedSpawnPosition is enabled, otherwise generate new random position
+        Vector2 spawnPos = (settings.fixedSpawnPosition && hasValidCachedSpawnPosition) 
+            ? cachedSpawnPosition 
+            : shape.GetRandomSpawnPosition();
         ball.transform.position = new Vector3(spawnPos.x, spawnPos.y, 0);
         
         ball.OnFrozen += OnBallFrozen;

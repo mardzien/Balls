@@ -56,6 +56,7 @@ public class ParameterRandomizer : MonoBehaviour
     
     [Header("Gap")]
     [SerializeField] private FloatRange gapAngleDegrees = new FloatRange(20f, 45f);
+    [SerializeField] private FloatRange gapInitialAngle = new FloatRange(0f, 360f, true);
     
     [Header("Ball")]
     [SerializeField] private FloatRange ballRadius = new FloatRange(0.2f, 0.35f, true); // Disabled by default
@@ -116,6 +117,13 @@ public class ParameterRandomizer : MonoBehaviour
         {
             settings.gapAngleDegrees = gapAngleDegrees.GetRandom();
             log.AppendLine($"  - gapAngleDegrees: {settings.gapAngleDegrees:F1}");
+        }
+        
+        // Gap Initial Angle (position)
+        if (gapInitialAngle.enabled)
+        {
+            settings.gapInitialAngle = gapInitialAngle.GetRandom();
+            log.AppendLine($"  - gapInitialAngle: {settings.gapInitialAngle:F1}");
         }
         
         // Ball Radius
@@ -216,6 +224,7 @@ public class ParameterRandomizer : MonoBehaviour
         
         rotationSpeed = new FloatRange(30f, 90f);
         gapAngleDegrees = new FloatRange(20f, 45f);
+        gapInitialAngle = new FloatRange(0f, 360f, true);
         ballRadius = new FloatRange(0.2f, 0.35f, true);
         trailTime = new FloatRange(0.15f, 0.4f, false);
         trailWidthMultiplier = new FloatRange(0.6f, 1.2f, false);

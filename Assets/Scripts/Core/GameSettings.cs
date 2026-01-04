@@ -68,6 +68,10 @@ public class GameSettings : ScriptableObject
     [Range(10f, 90f)]
     public float gapAngleDegrees = 30f;
     
+    [Tooltip("Początkowa pozycja luki w stopniach (0=góra, 90=prawo, 180=dół, 270=lewo)")]
+    [Range(0f, 360f)]
+    public float gapInitialAngle = 0f;
+    
     [Tooltip("Prędkość wędrowania luki w stopniach na sekundę")]
     public float rotationSpeed = 45f;
     
@@ -145,6 +149,9 @@ public class GameSettings : ScriptableObject
     public bool enableParameterRandomization = true;
     
     [Header("Spawn Settings")]
+    [Tooltip("Czy używać stałej pozycji spawnu dla całej rundy (wszystkie piłki startują z tego samego miejsca)")]
+    public bool fixedSpawnPosition = true;
+    
     [Tooltip("Minimalny kąt spawnu (stopnie, 0=prawo, 90=góra)")]
     [Range(0f, 180f)]
     public float spawnAngleMin = 45f;
@@ -195,6 +202,7 @@ public class GameSettings : ScriptableObject
         ringRadius = 5f;
         ringThickness = 0.15f;
         gapAngleDegrees = 30f;
+        gapInitialAngle = 0f;
         rotationSpeed = 45f;
         ringColor = Color.white;
         shapeColorMinBrightness = 0.8f;
@@ -228,6 +236,7 @@ public class GameSettings : ScriptableObject
         enableParameterRandomization = true;
         
         // Spawn
+        fixedSpawnPosition = true;
         spawnAngleMin = 45f;
         spawnAngleMax = 135f;
         spawnRadiusPercent = 0.5f;

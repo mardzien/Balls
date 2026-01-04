@@ -208,11 +208,11 @@ public abstract class SpawnShape : MonoBehaviour
     public abstract Vector2 GetRandomSpawnPosition();
     
     /// <summary>
-    /// Resetuje pozycję luki do stanu początkowego.
+    /// Resetuje pozycję luki do stanu początkowego (używa gapInitialAngle z ustawień).
     /// </summary>
     public virtual void ResetRotation()
     {
-        GapAngle = 0f;
+        GapAngle = settings != null ? settings.gapInitialAngle : 0f;
         GenerateShape();
     }
     

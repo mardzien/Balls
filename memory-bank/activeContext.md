@@ -8,7 +8,12 @@
    - Dodano randomizację koloru pierścienia/elipsy (losowy jasny kolor HSV)
    - Dodano pola `shapeColorMinBrightness` i `shapeColorMinSaturation` do GameSettings
 
-2. **Poprzednie zmiany (2025-12-08)**:
+2. **Nowe parametry spawnu i luki**:
+   - `fixedSpawnPosition` - gdy włączone, wszystkie piłki w rundzie startują z tego samego miejsca
+   - `gapInitialAngle` - początkowa pozycja luki (0=góra, 90=prawo, 180=dół, 270=lewo)
+   - Randomizacja `gapInitialAngle` w zakresie 0-360 stopni
+
+3. **Poprzednie zmiany (2025-12-08)**:
    - System wędrującej luki - kształty nie rotują, luka wędruje po obwodzie
    - System Batch Recording z filtrowaniem po długości
    - Losowe kolory piłek (zawsze)
@@ -18,6 +23,8 @@
 - ✅ ParameterRandomizer randomizuje parametry między rundami
 - ✅ Losowy kolor kształtu (pierścienia/elipsy) przy każdej rundzie
 - ✅ Stałe rozmiary kształtów i grawitacja
+- ✅ Fixed spawn position - wszystkie piłki w rundzie startują z tego samego miejsca
+- ✅ Gap initial angle - losowa pozycja początkowa luki
 - ✅ Filtrowanie nagrań po długości (15-40s)
 - ✅ Automatyczne usuwanie niepoprawnych nagrań
 - ✅ Dynamiczne odtwarzanie kształtu przy zmianie typu
@@ -76,8 +83,8 @@ Assets/Scripts/
 | trailStyle | Comet/Fading/Uniform | - | ✅ | Styl ogonka |
 | rotationSpeed | 30 | 90 | ✅ | Prędkość wędrującej luki |
 | gapAngleDegrees | 20 | 45 | ✅ | Kąt luki |
-| bounciness | 0.7 | 1.0 | ❌ | Współczynnik odbicia (zawsze 1.0) |
-| ballRadius | 0.2 | 0.35 | ❌ | Promień piłki |
+| gapInitialAngle | 0 | 360 | ✅ | Początkowa pozycja luki |
+| ballRadius | 0.2 | 0.35 | ✅ | Promień piłki |
 | trailTime | 0.15 | 0.4 | ❌ | Czas ogonka |
 
 ## 🔄 Usunięte parametry z randomizacji

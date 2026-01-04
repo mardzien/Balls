@@ -33,6 +33,13 @@ public class GameManager : MonoBehaviour
     private Vector2 cachedSpawnPosition;
     private bool hasValidCachedSpawnPosition = false;
     
+    // Battle mode fields
+    private Ball activeBall2;                    // Second active ball (Battle mode)
+    private Vector2 cachedSpawnPosition2;        // Symmetric spawn position (Battle mode)
+    private Color battleColor1;                  // Color for ball 1 (Battle mode)
+    private Color battleColor2;                  // Color for ball 2 (complementary, Battle mode)
+    private bool isRespawningBattleBalls = false; // Flag to prevent duplicate respawning
+    
     // Events
     public event System.Action OnGameOverStart;
     public event System.Action OnGameRestart;
@@ -159,10 +166,16 @@ public class GameManager : MonoBehaviour
         shape.SetVisible(true);
         shape.SetColor(settings.ringColor);
         
-        // Cache spawn position for the round if fixedSpawnPosition is enabled
-        if (settings.fixedSpawnPosition)
+        // Cache spawn position for the round
+        // In Battle mode, always use fixed positions (symmetric)
+        bool useFixedPosition = settings.fixedSpawnPosition || settings.gameMode == GameMode.Battle;
+        if (useFixedPosition)
         {
             cachedSpawnPosition = shape.GetRandomSpawnPosition();
+            // Symmetric position (mirror on Y axis) - relative to shape center
+            Vector2 center = shape.Center;
+            Vector2 relativePos = cachedSpawnPosition - center;
+            cachedSpawnPosition2 = center + new Vector2(-relativePos.x, relativePos.y);
             hasValidCachedSpawnPosition = true;
         }
         else
@@ -170,7 +183,15 @@ public class GameManager : MonoBehaviour
             hasValidCachedSpawnPosition = false;
         }
         
-        SpawnNewBall();
+        // Spawn balls based on game mode
+        if (settings.gameMode == GameMode.Battle)
+        {
+            SpawnBattleBalls();
+        }
+        else
+        {
+            SpawnNewBall();
+        }
         currentState = GameState.Playing;
         
         // Auto-start single recording (once per session) - only if mode is Single
@@ -228,6 +249,53 @@ public class GameManager : MonoBehaviour
         spawnGraceTimer = SPAWN_GRACE_PERIOD; // Reset grace period
     }
     
+    /// <summary>
+    /// Spawnuje dwie piłki w symetrycznych pozycjach z kolorami komplementarnymi (tryb Battle).
+    /// </summary>
+    private void SpawnBattleBalls()
+    {
+        // Generate complementary colors
+        float hue1 = Random.Range(0f, 1f);
+        float hue2 = (hue1 + 0.5f) % 1f; // Complementary color (180° shift)
+        float saturation = Random.Range(settings.ballColorMinSaturation, 1f);
+        float brightness = Random.Range(settings.ballColorMinBrightness, 1f);
+        
+        battleColor1 = Color.HSVToRGB(hue1, saturation, brightness);
+        battleColor2 = Color.HSVToRGB(hue2, saturation, brightness);
+        
+        // Spawn ball 1
+        activeBall = CreateBattleBall(cachedSpawnPosition, battleColor1, 0);
+        
+        // Spawn ball 2 (symmetric position)
+        activeBall2 = CreateBattleBall(cachedSpawnPosition2, battleColor2, 1);
+        
+        spawnGraceTimer = SPAWN_GRACE_PERIOD;
+    }
+    
+    /// <summary>
+    /// Tworzy pojedynczą piłkę dla trybu Battle z określonym kolorem i pozycją.
+    /// </summary>
+    private Ball CreateBattleBall(Vector2 position, Color color, int index)
+    {
+        GameObject ballObj = new GameObject($"BattleBall_{index}");
+        
+        SpriteRenderer sr = ballObj.AddComponent<SpriteRenderer>();
+        ballObj.AddComponent<CircleCollider2D>();
+        ballObj.AddComponent<Rigidbody2D>();
+        Ball ball = ballObj.AddComponent<Ball>();
+        
+        sr.sprite = SpriteUtility.GetBallSprite();
+        ball.Initialize(settings, color); // Pass specific color
+        
+        ballObj.transform.position = new Vector3(position.x, position.y, 0);
+        
+        ball.OnFrozen += OnBallFrozen;
+        ball.OnBounce += OnBallBounce;
+        
+        allBalls.Add(ball);
+        return ball;
+    }
+    
     private void OnBallBounce(float relativeVelocity)
     {
         // Przekaż zdarzenie kolizji do CollisionRecorder (standard recording)
@@ -246,13 +314,53 @@ public class GameManager : MonoBehaviour
     private void OnBallFrozen(Ball frozenBall)
     {
         if (currentState != GameState.Playing) return;
-        SpawnNewBall();
+        
+        if (settings.gameMode == GameMode.Battle)
+        {
+            // Prevent duplicate respawning (both balls trigger this event)
+            if (isRespawningBattleBalls) return;
+            isRespawningBattleBalls = true;
+            
+            // In Battle mode, freeze both balls and respawn both
+            FreezeBothBattleBalls();
+            RespawnBattleBalls();
+            
+            isRespawningBattleBalls = false;
+        }
+        else
+        {
+            SpawnNewBall();
+        }
+    }
+    
+    /// <summary>
+    /// Zamraża obie piłki w trybie Battle.
+    /// </summary>
+    private void FreezeBothBattleBalls()
+    {
+        if (activeBall != null && !activeBall.IsFrozen)
+        {
+            activeBall.Freeze();
+        }
+        if (activeBall2 != null && !activeBall2.IsFrozen)
+        {
+            activeBall2.Freeze();
+        }
+    }
+    
+    /// <summary>
+    /// Respawnuje obie piłki w trybie Battle z ich początkowych pozycji.
+    /// </summary>
+    private void RespawnBattleBalls()
+    {
+        // Spawn new pair of balls with the same colors
+        activeBall = CreateBattleBall(cachedSpawnPosition, battleColor1, allBalls.Count);
+        activeBall2 = CreateBattleBall(cachedSpawnPosition2, battleColor2, allBalls.Count);
+        spawnGraceTimer = SPAWN_GRACE_PERIOD;
     }
     
     private void CheckForEscape()
     {
-        if (activeBall == null || activeBall.IsFrozen) return;
-        
         // Grace period po spawnie - nie sprawdzaj ucieczki przez pierwsze 0.5s
         if (spawnGraceTimer > 0f)
         {
@@ -260,15 +368,31 @@ public class GameManager : MonoBehaviour
             return;
         }
         
-        Vector2 ballPosition = activeBall.transform.position;
-        
-        // Sprawdź czy piłka jest poza granicą kształtu
-        if (shape.IsPointOutsideShape(ballPosition, settings.escapeBuffer))
+        // Check ball 1
+        if (activeBall != null && !activeBall.IsFrozen)
         {
-            Debug.Log($"[Game] Ball escaped!");
-            TriggerGameOver();
+            Vector2 ballPosition = activeBall.transform.position;
+            if (shape.IsPointOutsideShape(ballPosition, settings.escapeBuffer))
+            {
+                Debug.Log($"[Game] Ball 1 escaped!");
+                TriggerGameOver();
+                return;
+            }
+        }
+        
+        // Check ball 2 (Battle mode only)
+        if (settings.gameMode == GameMode.Battle && activeBall2 != null && !activeBall2.IsFrozen)
+        {
+            Vector2 ball2Position = activeBall2.transform.position;
+            if (shape.IsPointOutsideShape(ball2Position, settings.escapeBuffer))
+            {
+                Debug.Log($"[Game] Ball 2 escaped!");
+                TriggerGameOver();
+                return;
+            }
         }
     }
+    
     
     private void TriggerGameOver()
     {
@@ -279,9 +403,14 @@ public class GameManager : MonoBehaviour
         
         OnGameOverStart?.Invoke();
         
+        // Disable freeze timer for active balls
         if (activeBall != null && !activeBall.IsFrozen)
         {
             activeBall.DisableFreezeTimer();
+        }
+        if (activeBall2 != null && !activeBall2.IsFrozen)
+        {
+            activeBall2.DisableFreezeTimer();
         }
     }
     
@@ -298,6 +427,7 @@ public class GameManager : MonoBehaviour
         }
         allBalls.Clear();
         activeBall = null;
+        activeBall2 = null;
     }
     
     private void OnDestroy()

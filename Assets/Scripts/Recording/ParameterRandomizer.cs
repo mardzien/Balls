@@ -29,6 +29,14 @@ public class FloatRange
 /// </summary>
 public class ParameterRandomizer : MonoBehaviour
 {
+    [Header("Game Mode")]
+    [Tooltip("Włącz losowanie trybu gry")]
+    [SerializeField] private bool randomizeGameMode = false;
+    
+    [Tooltip("Dozwolone tryby gry")]
+    [SerializeField] private bool allowNormal = true;
+    [SerializeField] private bool allowBattle = true;
+    
     [Header("Shape Type")]
     [Tooltip("Włącz losowanie typu kształtu")]
     [SerializeField] private bool randomizeShapeType = true;
@@ -81,6 +89,13 @@ public class ParameterRandomizer : MonoBehaviour
         
         System.Text.StringBuilder log = new System.Text.StringBuilder();
         log.AppendLine("[ParameterRandomizer] Randomized parameters:");
+        
+        // Game Mode
+        if (randomizeGameMode)
+        {
+            settings.gameMode = GetRandomGameMode();
+            log.AppendLine($"  - gameMode: {settings.gameMode}");
+        }
         
         // Shape Type
         if (randomizeShapeType)
@@ -158,6 +173,22 @@ public class ParameterRandomizer : MonoBehaviour
         }
     }
     
+    private GameMode GetRandomGameMode()
+    {
+        var allowedModes = new System.Collections.Generic.List<GameMode>();
+        
+        if (allowNormal) allowedModes.Add(GameMode.Normal);
+        if (allowBattle) allowedModes.Add(GameMode.Battle);
+        
+        if (allowedModes.Count == 0)
+        {
+            Debug.LogWarning("[ParameterRandomizer] No game modes allowed! Defaulting to Normal.");
+            return GameMode.Normal;
+        }
+        
+        return allowedModes[Random.Range(0, allowedModes.Count)];
+    }
+    
     private ShapeType GetRandomShapeType()
     {
         var allowedTypes = new System.Collections.Generic.List<ShapeType>();
@@ -210,6 +241,10 @@ public class ParameterRandomizer : MonoBehaviour
     [ContextMenu("Reset to Defaults")]
     public void ResetToDefaults()
     {
+        randomizeGameMode = false;
+        allowNormal = true;
+        allowBattle = true;
+        
         randomizeShapeType = true;
         allowRing = true;
         allowEllipse = true;

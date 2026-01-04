@@ -20,6 +20,15 @@ public enum RecordingMode
 }
 
 /// <summary>
+/// Tryb gry.
+/// </summary>
+public enum GameMode
+{
+    Normal,         // Standardowa gra - 1 piłka
+    Battle          // Tryb bitwa - 2 piłki symetryczne
+}
+
+/// <summary>
 /// Konfiguracja parametrów gry - ScriptableObject do łatwej edycji w inspektorze.
 /// </summary>
 [CreateAssetMenu(fileName = "GameConfig", menuName = "Ball Engine/Game Settings")]
@@ -52,6 +61,10 @@ public class GameSettings : ScriptableObject
     
     [Tooltip("Wymuś rozdzielczość YouTube Shorts w buildzie")]
     public bool forceResolution = true;
+    
+    [Header("Game Mode")]
+    [Tooltip("Tryb gry: Normal = 1 piłka, Battle = 2 piłki symetryczne")]
+    public GameMode gameMode = GameMode.Normal;
     
     [Header("Shape Type")]
     [Tooltip("Typ kształtu spawnu (Ring lub Ellipse)")]
@@ -194,6 +207,9 @@ public class GameSettings : ScriptableObject
         // Screen
         cameraOrthoSize = 10f;
         forceResolution = true;
+        
+        // Game Mode
+        gameMode = GameMode.Normal;
         
         // Shape Type
         shapeType = ShapeType.Ring;

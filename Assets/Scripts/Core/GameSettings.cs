@@ -29,6 +29,15 @@ public enum GameMode
 }
 
 /// <summary>
+/// Tryb zamrażania piłek.
+/// </summary>
+public enum FreezeMode
+{
+    Time,           // Zamrażanie po upływie czasu
+    Bounces         // Zamrażanie po określonej liczbie odbić
+}
+
+/// <summary>
 /// Konfiguracja parametrów gry - ScriptableObject do łatwej edycji w inspektorze.
 /// </summary>
 [CreateAssetMenu(fileName = "GameConfig", menuName = "Ball Engine/Game Settings")]
@@ -122,8 +131,20 @@ public class GameSettings : ScriptableObject
     public float friction = 0.1f;
     
     [Header("Ball Freeze & Spawn")]
-    [Tooltip("Czas życia kulki przed zamrożeniem (sekundy)")]
+    [Tooltip("Tryb zamrażania: Time = po czasie, Bounces = po liczbie odbić")]
+    public FreezeMode freezeMode = FreezeMode.Time;
+    
+    [Tooltip("Czas życia kulki przed zamrożeniem (sekundy) - używane gdy freezeMode = Time")]
     public float ballFreezeTime = 3f;
+    
+    [Tooltip("Maksymalna liczba odbić przed zamrożeniem - używane gdy freezeMode = Bounces")]
+    public int ballMaxBounces = 4;
+    
+    [Tooltip("Czy włączyć inkrementację wartości dla kolejnych piłek (+1 dla każdej następnej)")]
+    public bool enableFreezeIncrementation = false;
+    
+    [Tooltip("Krok inkrementacji dla kolejnych piłek (np. 1 = każda piłka +1)")]
+    public float freezeIncrementStep = 1f;
     
     [Tooltip("Minimalna jasność koloru kulki (HSV Value)")]
     [Range(0.5f, 1f)]

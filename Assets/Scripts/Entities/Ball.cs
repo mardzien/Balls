@@ -19,6 +19,9 @@ public class Ball : MonoBehaviour
     
     // Freeze system
     private float lifeTimer = 0f;
+    private float maxLifeTime = 3f;      // Limit czasu dla tej piłki
+    private int currentBounces = 0;      // Licznik odbić
+    private int maxBounces = 4;          // Limit odbić dla tej piłki
     private bool isFrozen = false;
     private bool canFreeze = true;
     private Color ballColor;
@@ -44,6 +47,16 @@ public class Ball : MonoBehaviour
     /// </summary>
     public Color BallColor => ballColor;
     
+    /// <summary>
+    /// Pozostała liczba odbić (dla trybu Bounces).
+    /// </summary>
+    public int RemainingBounces => Mathf.Max(0, maxBounces - currentBounces);
+    
+    /// <summary>
+    /// Pozostały czas (dla trybu Time).
+    /// </summary>
+    public float RemainingTime => Mathf.Max(0f, maxLifeTime - lifeTimer);
+    
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -56,11 +69,15 @@ public class Ball : MonoBehaviour
     {
         if (isFrozen || settings == null || !canFreeze) return;
         
-        lifeTimer += Time.deltaTime;
-        
-        if (lifeTimer >= settings.ballFreezeTime)
+        // Sprawdzanie limitu czasu (tylko w trybie Time)
+        if (settings.freezeMode == FreezeMode.Time)
         {
-            Freeze();
+            lifeTimer += Time.deltaTime;
+            
+            if (lifeTimer >= maxLifeTime)
+            {
+                Freeze();
+            }
         }
     }
     
@@ -69,7 +86,7 @@ public class Ball : MonoBehaviour
     /// </summary>
     public void Initialize(GameSettings gameSettings)
     {
-        Initialize(gameSettings, null);
+        Initialize(gameSettings, null, gameSettings.ballFreezeTime, gameSettings.ballMaxBounces);
     }
     
     /// <summary>
@@ -79,10 +96,25 @@ public class Ball : MonoBehaviour
     /// <param name="specificColor">Konkretny kolor (null = losowy)</param>
     public void Initialize(GameSettings gameSettings, Color? specificColor)
     {
+        Initialize(gameSettings, specificColor, gameSettings.ballFreezeTime, gameSettings.ballMaxBounces);
+    }
+    
+    /// <summary>
+    /// Inicjalizuje kulkę z podanymi ustawieniami, kolorem i limitami zamrażania.
+    /// </summary>
+    /// <param name="gameSettings">Ustawienia gry</param>
+    /// <param name="specificColor">Konkretny kolor (null = losowy)</param>
+    /// <param name="freezeTime">Limit czasu dla tej piłki</param>
+    /// <param name="maxBouncesLimit">Limit odbić dla tej piłki</param>
+    public void Initialize(GameSettings gameSettings, Color? specificColor, float freezeTime, int maxBouncesLimit)
+    {
         settings = gameSettings;
         isFrozen = false;
         canFreeze = true;
         lifeTimer = 0f;
+        maxLifeTime = freezeTime;
+        currentBounces = 0;
+        maxBounces = maxBouncesLimit;
         
         if (rb == null) rb = GetComponent<Rigidbody2D>();
         if (circleCollider == null) circleCollider = GetComponent<CircleCollider2D>();
@@ -209,7 +241,19 @@ public class Ball : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (isFrozen) return;
+        
         float relativeVelocity = collision.relativeVelocity.magnitude;
         OnBounce?.Invoke(relativeVelocity);
+        
+        // Sprawdzanie limitu odbić (tylko w trybie Bounces)
+        if (settings != null && settings.freezeMode == FreezeMode.Bounces)
+        {
+            currentBounces++;
+            
+            if (currentBounces >= maxBounces)
+            {
+                Freeze();
+            }
+        }
     }
 }

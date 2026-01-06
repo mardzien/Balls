@@ -19,6 +19,7 @@ public class GameManager : MonoBehaviour
     
     private List<Ball> allBalls = new List<Ball>();
     private Ball activeBall;
+    private BallCounterUI globalCounter; // Globalny licznik UI
     
     private enum GameState { Playing, GameOver }
     
@@ -28,6 +29,7 @@ public class GameManager : MonoBehaviour
     private const float SPAWN_GRACE_PERIOD = 0.5f;
     private int roundCount = 0;
     private bool hasRecordedThisSession = false;
+    private int ballSpawnIndex = 0; // Globalny licznik spawnowanych piłek (dla inkrementacji)
     
     // Fixed spawn position for round (when fixedSpawnPosition is enabled)
     private Vector2 cachedSpawnPosition;
@@ -120,6 +122,48 @@ public class GameManager : MonoBehaviour
                 batchRecordingController = gameObject.AddComponent<BatchRecordingController>();
             }
         }
+        
+        // Create global counter UI
+        CreateGlobalCounter();
+    }
+    
+    /// <summary>
+    /// Tworzy globalny licznik UI pod kształtem.
+    /// </summary>
+    private void CreateGlobalCounter()
+    {
+        if (globalCounter != null) return; // Już istnieje
+        
+        GameObject counterObj = new GameObject("GlobalCounter");
+        globalCounter = counterObj.AddComponent<BallCounterUI>();
+        
+        // Oblicz początkową pozycję
+        Vector3 positionUnderShape = CalculateCounterPosition();
+        globalCounter.Initialize(settings, positionUnderShape);
+    }
+    
+    /// <summary>
+    /// Aktualizuje pozycję globalnego licznika (np. gdy kształt się zmieni).
+    /// </summary>
+    private void UpdateCounterPosition()
+    {
+        if (globalCounter == null || shape == null) return;
+        
+        Vector3 newPosition = CalculateCounterPosition();
+        globalCounter.transform.position = newPosition;
+    }
+    
+    /// <summary>
+    /// Oblicza pozycję licznika pod dolną krawędzią kształtu.
+    /// </summary>
+    private Vector3 CalculateCounterPosition()
+    {
+        if (shape == null) return Vector3.zero;
+        
+        // Pozycja dynamicznie obliczona - tuż pod dolną krawędzią kształtu
+        float bottomEdge = shape.Center.y - shape.OuterRadius;
+        float counterOffset = -1.5f; // Małe przesunięcie w dół od krawędzi
+        return new Vector3(shape.Center.x, bottomEdge + counterOffset, 0);
     }
     
     /// <summary>
@@ -146,6 +190,7 @@ public class GameManager : MonoBehaviour
     private void StartNewRound()
     {
         roundCount++;
+        ballSpawnIndex = 0; // Reset licznika piłek dla nowej rundy
         ClearAllBalls();
         
         // IMPORTANT: Invoke OnGameRestart FIRST so randomization happens BEFORE spawning
@@ -165,6 +210,9 @@ public class GameManager : MonoBehaviour
         shape.ResetRotation();
         shape.SetVisible(true);
         shape.SetColor(settings.ringColor);
+        
+        // Aktualizuj pozycję licznika (kształt mógł się zmienić)
+        UpdateCounterPosition();
         
         // Cache spawn position for the round
         // In Battle mode, always use fixed positions (symmetric)
@@ -233,7 +281,25 @@ public class GameManager : MonoBehaviour
         Ball ball = ballObj.AddComponent<Ball>();
         
         sr.sprite = SpriteUtility.GetBallSprite();
-        ball.Initialize(settings);
+        
+        // Oblicz wartości dla tej piłki (z inkrementacją lub bez)
+        float freezeTime = settings.ballFreezeTime;
+        int maxBounces = settings.ballMaxBounces;
+        
+        if (settings.enableFreezeIncrementation)
+        {
+            if (settings.freezeMode == FreezeMode.Time)
+            {
+                freezeTime += ballSpawnIndex * settings.freezeIncrementStep;
+            }
+            else if (settings.freezeMode == FreezeMode.Bounces)
+            {
+                maxBounces += Mathf.RoundToInt(ballSpawnIndex * settings.freezeIncrementStep);
+            }
+        }
+        
+        ball.Initialize(settings, null, freezeTime, maxBounces);
+        ballSpawnIndex++; // Inkrementuj globalny licznik
         
         // Use cached position if fixedSpawnPosition is enabled, otherwise generate new random position
         Vector2 spawnPos = (settings.fixedSpawnPosition && hasValidCachedSpawnPosition) 
@@ -247,6 +313,12 @@ public class GameManager : MonoBehaviour
         allBalls.Add(ball);
         activeBall = ball;
         spawnGraceTimer = SPAWN_GRACE_PERIOD; // Reset grace period
+        
+        // Ustaw aktywną piłkę w globalnym liczniku
+        if (globalCounter != null)
+        {
+            globalCounter.SetActiveBall(activeBall);
+        }
     }
     
     /// <summary>
@@ -269,7 +341,16 @@ public class GameManager : MonoBehaviour
         // Spawn ball 2 (symmetric position)
         activeBall2 = CreateBattleBall(cachedSpawnPosition2, battleColor2, 1);
         
+        // Inkrementuj ballSpawnIndex tylko raz (obie piłki mają te same wartości)
+        ballSpawnIndex++;
+        
         spawnGraceTimer = SPAWN_GRACE_PERIOD;
+        
+        // Ustaw aktywną piłkę w globalnym liczniku (śledzi pierwszą piłkę)
+        if (globalCounter != null)
+        {
+            globalCounter.SetActiveBall(activeBall);
+        }
     }
     
     /// <summary>
@@ -285,7 +366,25 @@ public class GameManager : MonoBehaviour
         Ball ball = ballObj.AddComponent<Ball>();
         
         sr.sprite = SpriteUtility.GetBallSprite();
-        ball.Initialize(settings, color); // Pass specific color
+        
+        // Oblicz wartości dla tej piłki (z inkrementacją lub bez)
+        // W trybie Battle obie piłki mają te same wartości (ten sam ballSpawnIndex)
+        float freezeTime = settings.ballFreezeTime;
+        int maxBounces = settings.ballMaxBounces;
+        
+        if (settings.enableFreezeIncrementation)
+        {
+            if (settings.freezeMode == FreezeMode.Time)
+            {
+                freezeTime += ballSpawnIndex * settings.freezeIncrementStep;
+            }
+            else if (settings.freezeMode == FreezeMode.Bounces)
+            {
+                maxBounces += Mathf.RoundToInt(ballSpawnIndex * settings.freezeIncrementStep);
+            }
+        }
+        
+        ball.Initialize(settings, color, freezeTime, maxBounces); // Pass specific color and limits
         
         ballObj.transform.position = new Vector3(position.x, position.y, 0);
         
@@ -357,6 +456,12 @@ public class GameManager : MonoBehaviour
         activeBall = CreateBattleBall(cachedSpawnPosition, battleColor1, allBalls.Count);
         activeBall2 = CreateBattleBall(cachedSpawnPosition2, battleColor2, allBalls.Count);
         spawnGraceTimer = SPAWN_GRACE_PERIOD;
+        
+        // Ustaw aktywną piłkę w globalnym liczniku (śledzi pierwszą piłkę)
+        if (globalCounter != null)
+        {
+            globalCounter.SetActiveBall(activeBall);
+        }
     }
     
     private void CheckForEscape()

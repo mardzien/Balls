@@ -1,9 +1,21 @@
 # Active Context: Current Work Focus
 
-## 🎯 Current Session Summary (2026-01-04)
+## 🎯 Current Session Summary (2026-01-06)
 
 ### Co zostało zrobione w tej sesji:
-1. **Refaktoryzacja randomizacji** - uproszczenie i dodanie koloru kształtu
+1. **System zamrażania oparty na odbiciach i licznik UI**:
+   - Dodano `FreezeMode` enum (Time / Bounces) - wybór trybu zamrażania
+   - Nowe pola w GameSettings: `freezeMode`, `ballMaxBounces`, `enableFreezeIncrementation`, `freezeIncrementStep`
+   - Ball.cs śledzi odbicia i czas, z properties `RemainingBounces` i `RemainingTime`
+   - Nowy komponent `BallCounterUI` - wyświetla licznik pod piłką (TextMeshPro)
+   - Licznik pokazuje wartość pozostałą (odlicza w dół)
+   - Inkrementacja opcjonalna - każda kolejna piłka może mieć +1 do limitu
+   - GameManager śledzi `ballSpawnIndex` i oblicza wartości dla każdej piłki
+   - W trybie Battle obie piłki mają te same wartości
+   - Dodano pakiet TextMeshPro (3.0.9) do projektu
+
+### Poprzednie sesje:
+1. **Refaktoryzacja randomizacji** (2026-01-04) - uproszczenie i dodanie koloru kształtu
    - Usunięto randomizację `ringRadius`, `ellipseWidthRadius`, `ellipseHeightRadius`, `gravity`
    - Dodano randomizację koloru pierścienia/elipsy (losowy jasny kolor HSV)
    - Dodano pola `shapeColorMinBrightness` i `shapeColorMinSaturation` do GameSettings
@@ -28,6 +40,9 @@
    - Losowe kolory piłek (zawsze)
 
 ### Aktualny stan:
+- ✅ **System zamrażania** - wybór między czasem a odbiciami (FreezeMode)
+- ✅ **Licznik UI** - wyświetla wartość pozostałą pod piłką (TextMeshPro)
+- ✅ **Inkrementacja** - opcjonalna, każda kolejna piłka +1 do limitu
 - ✅ BatchRecordingController działa (F10 start/stop)
 - ✅ ParameterRandomizer randomizuje parametry między rundami
 - ✅ Losowy kolor kształtu (pierścienia/elipsy) przy każdej rundzie
@@ -46,17 +61,19 @@
 ```
 Assets/Scripts/
 ├── Core/
-│   ├── GameManager.cs      # Główny kontroler + integracja batch recording
-│   ├── GameSettings.cs     # Konfiguracja (ScriptableObject)
+│   ├── GameManager.cs      # Główny kontroler + ballSpawnIndex tracking
+│   ├── GameSettings.cs     # Konfiguracja (ScriptableObject) + FreezeMode
 │   └── ScreenSetup.cs      # Setup ekranu 9:16
 ├── Entities/
 │   ├── SpawnShape.cs       # Bazowa klasa dla kształtów
 │   ├── Ring.cs             # Pierścień z wędrującą luką
 │   ├── EllipseShape.cs     # Elipsa z wędrującą luką
-│   └── Ball.cs             # Kulka z fizyką (losowe kolory)
+│   └── Ball.cs             # Kulka z fizyką + tracking odbić/czasu
 ├── Effects/
 │   ├── GameOverEffect.cs   # Efekty końcowe
 │   └── BallTrailEffect.cs  # Efekty ogonków
+├── UI/
+│   └── BallCounterUI.cs    # Licznik wartości pod piłką (TextMeshPro)
 ├── Utils/
 │   └── SpriteUtility.cs    # Proceduralne sprite'y
 └── Recording/
@@ -89,6 +106,7 @@ Assets/Scripts/
 | Parametr | Min | Max | Włączony | Opis |
 |----------|-----|-----|----------|------|
 | gameMode | Normal | Battle | ❌ | Tryb gry (domyślnie wyłączone) |
+| freezeMode | Time | Bounces | ❌ | Tryb zamrażania (opcjonalnie) |
 | shapeType | Ring | Ellipse | ✅ | Typ kształtu |
 | shapeColor | HSV random | - | ✅ | Losowy jasny kolor kształtu |
 | trailStyle | Comet/Fading/Uniform | - | ✅ | Styl ogonka |
@@ -96,6 +114,8 @@ Assets/Scripts/
 | gapAngleDegrees | 20 | 45 | ✅ | Kąt luki |
 | gapInitialAngle | 0 | 360 | ✅ | Początkowa pozycja luki |
 | ballRadius | 0.2 | 0.35 | ✅ | Promień piłki |
+| ballFreezeTime | 2 | 5 | ❌ | Czas zamrażania (opcjonalnie) |
+| ballMaxBounces | 3 | 6 | ❌ | Liczba odbić (opcjonalnie) |
 | trailTime | 0.15 | 0.4 | ❌ | Czas ogonka |
 
 ## 🔄 Usunięte parametry z randomizacji

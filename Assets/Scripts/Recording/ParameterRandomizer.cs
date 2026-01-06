@@ -60,7 +60,7 @@ public class ParameterRandomizer : MonoBehaviour
     [SerializeField] private bool randomizeShapeColor = true;
     
     [Header("Gap Movement")]
-    [SerializeField] private FloatRange rotationSpeed = new FloatRange(30f, 90f);
+    [SerializeField] private FloatRange rotationSpeed = new FloatRange(-50f, 50f);
     
     [Header("Gap")]
     [SerializeField] private FloatRange gapAngleDegrees = new FloatRange(20f, 45f);
@@ -70,8 +70,8 @@ public class ParameterRandomizer : MonoBehaviour
     [SerializeField] private FloatRange ballRadius = new FloatRange(0.2f, 0.35f, true); // Disabled by default
     
     [Header("Trail Effect")]
-    [SerializeField] private FloatRange trailTime = new FloatRange(0.15f, 0.4f, false); // Disabled by default
-    [SerializeField] private FloatRange trailWidthMultiplier = new FloatRange(0.6f, 1.2f, false); // Disabled by default
+    [SerializeField] private FloatRange trailTime = new FloatRange(0.1f, 0.4f, true); // Disabled by default
+    [SerializeField] private FloatRange trailWidthMultiplier = new FloatRange(0.2f, 0.8f, true); // Disabled by default
     
     [Header("Debug")]
     [SerializeField] private bool logRandomization = true;

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameSettings
   cameraOrthoSize: 10
   forceResolution: 1
-  gameMode: 1
+  gameMode: 0
   shapeType: 1
   ringRadius: 5
   ringThickness: 0.2
@@ -30,7 +30,11 @@ MonoBehaviour:
   ballRadius: 0.23985267
   bounciness: 1
   friction: 0.1
+  freezeMode: 0
   ballFreezeTime: 4
+  ballMaxBounces: 4
+  enableFreezeIncrementation: 0
+  freezeIncrementStep: 1
   ballColorMinBrightness: 0.8
   ballColorMinSaturation: 0.7
   gravity: 15

@@ -1,0 +1,37 @@
+# Token Cache Optimization Rules
+
+## File Reading Strategy
+- **ALWAYS use offset + limit** when reading files larger than 100 lines
+- **NEVER read entire files** unless absolutely necessary (e.g., first-time understanding)
+- **Prefer targeted reads**: Read only the specific section needed (e.g., `read_file offset=200 limit=50`)
+- **Cache file structure**: After first read, remember structure and use grep/offset for subsequent reads
+
+## Grep Usage
+- **Minimize context**: Use `-A` and `-B` sparingly (max 10 lines each)
+- **Prefer `output_mode: "files_with_matches"`** when searching for file locations
+- **Use `head_limit`** to cap results when searching large codebases
+
+## Code Editing Strategy
+- **Read once, edit multiple times**: After understanding a file, avoid re-reading it
+- **Use grep to locate** specific functions/methods instead of reading entire files
+- **Batch operations**: Group related edits to minimize file reads
+
+## Large File Handling (>300 lines)
+- **Always use offset/limit** for large files
+- **Read in chunks**: Process files section by section (50-100 lines at a time)
+- **Use codebase_search** for semantic understanding instead of reading entire files
+
+## Memory Management
+- **Avoid redundant reads**: Check if information is already in context before reading
+- **Prefer semantic search** (`codebase_search`) over reading multiple files when exploring
+- **Use file_search** to locate files before reading them
+
+## Examples
+✅ GOOD: `read_file("file.cs", offset=150, limit=50)` - reads only needed section
+❌ BAD: `read_file("file.cs")` - reads entire 500-line file
+
+✅ GOOD: `grep(pattern, path, output_mode="files_with_matches")` - finds files only
+❌ BAD: `grep(pattern, path, -A=50)` - returns too much context
+
+✅ GOOD: Read file structure once, then use grep/offset for specific edits
+❌ BAD: Reading same file 5 times during one session

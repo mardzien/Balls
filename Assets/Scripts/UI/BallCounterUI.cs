@@ -85,29 +85,32 @@ public class BallCounterUI : MonoBehaviour
             return;
         }
         
-        int displayValue = 0;
+        float displayValue = 0f;
+        string displayText = "";
         
         // Wybór wartości do wyświetlenia na podstawie trybu zamrażania
         if (settings.freezeMode == FreezeMode.Time)
         {
-            // Wyświetl pozostały czas (obcięcie części po przecinku, nie zaokrąglanie)
-            displayValue = Mathf.FloorToInt(currentBall.RemainingTime);
+            // Wyświetl pozostały czas z 1 cyfrą po przecinku
+            displayValue = currentBall.RemainingTime;
+            displayText = displayValue.ToString("0.0");
         }
         else if (settings.freezeMode == FreezeMode.Bounces)
         {
-            // Wyświetl pozostałe odbicia
+            // Wyświetl pozostałe odbicia (liczba całkowita)
             displayValue = currentBall.RemainingBounces;
+            displayText = Mathf.FloorToInt(displayValue).ToString();
         }
         
         // Aktualizuj tekst
-        textMesh.text = displayValue.ToString();
+        textMesh.text = displayText;
         
         // Opcjonalnie: zmień kolor gdy wartość jest niska
-        if (displayValue <= 1)
+        if (displayValue <= 1f)
         {
             textMesh.color = Color.red;
         }
-        else if (displayValue <= 2)
+        else if (displayValue <= 2f)
         {
             textMesh.color = Color.yellow;
         }

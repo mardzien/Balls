@@ -34,6 +34,10 @@ W inspektorze znajdziesz nową sekcję **Ball Freeze & Spawn**:
    - O ile zwiększyć wartość dla każdej kolejnej piłki
    - Domyślnie: 1
 
+6. **Show Counter**
+   - Czy wyświetlać licznik pod kształtem
+   - Domyślnie: włączone (✓)
+
 ## 📊 Przykłady użycia
 
 ### Przykład 1: Tryb Time z inkrementacją
@@ -45,9 +49,9 @@ W inspektorze znajdziesz nową sekcję **Ball Freeze & Spawn**:
 - Freeze Increment Step: `1`
 
 **Rezultat:**
-- Piłka 1: zamraża się po 1 sekundzie (licznik: 1, 0)
-- Piłka 2: zamraża się po 2 sekundach (licznik: 2, 1, 0)
-- Piłka 3: zamraża się po 3 sekundach (licznik: 3, 2, 1, 0)
+- Piłka 1: zamraża się po 1 sekundzie (licznik: 1.0, 0.9, 0.8, ..., 0.1, 0.0)
+- Piłka 2: zamraża się po 2 sekundach (licznik: 2.0, 1.9, 1.8, ..., 0.1, 0.0)
+- Piłka 3: zamraża się po 3 sekundach (licznik: 3.0, 2.9, 2.8, ..., 0.1, 0.0)
 - itd.
 
 ### Przykład 2: Tryb Bounces bez inkrementacji
@@ -78,8 +82,12 @@ W inspektorze znajdziesz nową sekcję **Ball Freeze & Spawn**:
 ## 🎨 Licznik UI
 
 **Globalny licznik** znajduje się pod pierścieniem/elipsą i pokazuje wartość dla aktywnej piłki:
-- **W trybie Time**: pozostały czas (część po przecinku obcięta, nie zaokrąglana)
-- **W trybie Bounces**: pozostałą liczbę odbić
+- **W trybie Time**: pozostały czas z **1 cyfrą po przecinku** (np. 3.7, 2.1, 0.5)
+- **W trybie Bounces**: pozostałą liczbę odbić (liczba całkowita)
+
+### Włączanie/wyłączanie:
+- W `GameConfig.asset` znajdziesz pole **Show Counter** (domyślnie: włączone)
+- Odznacz, aby ukryć licznik całkowicie
 
 ### Właściwości:
 - **Rozmiar**: Duży (12.0) dla doskonałej widoczności

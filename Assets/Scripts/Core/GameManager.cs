@@ -134,6 +134,9 @@ public class GameManager : MonoBehaviour
     {
         if (globalCounter != null) return; // Już istnieje
         
+        // Nie twórz licznika jeśli wyłączony w ustawieniach
+        if (!settings.showCounter) return;
+        
         GameObject counterObj = new GameObject("GlobalCounter");
         globalCounter = counterObj.AddComponent<BallCounterUI>();
         

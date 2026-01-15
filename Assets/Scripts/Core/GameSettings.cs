@@ -146,6 +146,9 @@ public class GameSettings : ScriptableObject
     [Tooltip("Krok inkrementacji dla kolejnych piłek (np. 1 = każda piłka +1)")]
     public float freezeIncrementStep = 1f;
     
+    [Tooltip("Czy wyświetlać licznik wartości pod kształtem")]
+    public bool showCounter = true;
+    
     [Tooltip("Minimalna jasność koloru kulki (HSV Value)")]
     [Range(0.5f, 1f)]
     public float ballColorMinBrightness = 0.8f;

@@ -38,6 +38,39 @@ W inspektorze znajdziesz nową sekcję **Ball Freeze & Spawn**:
    - Czy wyświetlać licznik pod kształtem
    - Domyślnie: włączone (✓)
 
+7. **Enable Freeze Effect**
+   - Czy uruchamiać efekt wizualny przy zamrożeniu (szary kolor + lodowa obwódka)
+   - Domyślnie: włączone (✓)
+
+8. **Enable Instant Freeze On Shape Contact**
+   - Czy natychmiastowo zamrażać piłki po dotknięciu pierścienia/elipsy
+   - Domyślnie: włączone (✓)
+
+9. **Enable Frozen Ball Rotation**
+   - Czy obracać zamarznięte piłki razem z ruchem luki
+
+10. **Freeze Collision Clip**
+   - Dźwięk odtwarzany przy natychmiastowym zamrożeniu po dotknięciu kształtu
+   - Jeśli puste, zamrożenie jest bez dźwięku
+
+11. **Freeze Collision Volume**
+   - Głośność dźwięku zamrożenia (0-1)
+   - Domyślnie: 1.0
+
+## ❄️ Natychmiastowe zamrażanie po dotknięciu kształtu
+
+- Jeśli opcja **Enable Instant Freeze On Shape Contact** jest włączona:
+  - Po dotknięciu pierścienia/elipsy piłka **zamarza natychmiast**.
+  - Odtwarzany jest dźwięk kolizji zamrożenia (jeśli przypisany).
+  - To zdarzenie **nie zapisuje standardowej kolizji** do pliku JSON.
+  - Od tego momentu piłka może odbijać się tylko od innych zamarzniętych piłek.
+
+## 🔄 Obrót zamarzniętych piłek
+
+- Zamarznięte piłki obracają się wraz z ruchem luki.
+- Działa zarówno dla **Ring**, jak i **Ellipse**.
+- Dla elipsy piłka utrzymuje proporcjonalną odległość od obrysu, aby nie wypadała na zewnątrz.
+
 ## 📊 Przykłady użycia
 
 ### Przykład 1: Tryb Time z inkrementacją
@@ -137,3 +170,5 @@ Możesz dodać randomizację nowych parametrów w `ParameterRandomizer.cs`:
 - Aktualizacja przy każdym spawnie piłki (SetActiveBall)
 - W trybie Battle śledzi pierwszą piłkę
 - Font size: 12.0 (outline: 0.4)
+- Kolizja z kształtem wywołuje natychmiastowe zamrożenie bez zapisu JSON
+- Zamarznięte piłki są przesuwane kinematycznie po obrysie kształtu

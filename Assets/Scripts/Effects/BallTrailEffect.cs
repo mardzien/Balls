@@ -40,6 +40,12 @@ public class BallTrailEffect : MonoBehaviour
     private const float POSITION_RECORD_INTERVAL = 0.02f;
     private float lastRecordTime = 0f;
     
+    // Emit delay to avoid initial "ghost" trail
+    private const float DEFAULT_EMIT_DELAY = 0.12f;
+    private float emitDelayTimer = 0f;
+    private bool emitDelayActive = false;
+    private bool desiredEmitting = true;
+    
     /// <summary>
     /// Inicjalizuje efekt ogonka z podanymi parametrami.
     /// </summary>
@@ -48,6 +54,9 @@ public class BallTrailEffect : MonoBehaviour
         baseColor = color;
         ballRadius = trailWidth; // trailWidth jest bazowany na promieniu piłki
         trailTime = time;
+        desiredEmitting = true;
+        emitDelayActive = false;
+        emitDelayTimer = 0f;
         
         if (trailRenderer == null)
         {
@@ -70,6 +79,27 @@ public class BallTrailEffect : MonoBehaviour
     
     private void Update()
     {
+        if (emitDelayActive)
+        {
+            emitDelayTimer -= Time.deltaTime;
+            if (emitDelayTimer <= 0f)
+            {
+                emitDelayActive = false;
+                if (!isFrozen && desiredEmitting && trailRenderer != null)
+                {
+                    trailRenderer.emitting = true;
+                    positionHistory.Clear();
+                    lastRecordTime = Time.time;
+                }
+            }
+            return;
+        }
+
+        if (trailRenderer != null && !trailRenderer.emitting)
+        {
+            return;
+        }
+
         // Record position history for all styles (needed for comet particles)
         RecordPosition();
         
@@ -131,6 +161,51 @@ public class BallTrailEffect : MonoBehaviour
     public void SetFrozen(bool frozen)
     {
         isFrozen = frozen;
+    }
+
+    /// <summary>
+    /// Opóźnia start emisji ogonka po spawnie.
+    /// </summary>
+    public void StartEmitDelay(float delaySeconds)
+    {
+        if (trailRenderer == null)
+        {
+            trailRenderer = GetComponent<TrailRenderer>();
+        }
+
+        if (trailRenderer == null) return;
+        
+        emitDelayActive = delaySeconds > 0f;
+        emitDelayTimer = delaySeconds > 0f ? delaySeconds : 0f;
+        if (emitDelayActive)
+        {
+            trailRenderer.emitting = false;
+            positionHistory.Clear();
+            trailRenderer.Clear();
+        }
+        else
+        {
+            trailRenderer.emitting = desiredEmitting;
+        }
+    }
+
+    /// <summary>
+    /// Włącza/wyłącza emisję ogonka.
+    /// </summary>
+    public void SetEmitting(bool emitting)
+    {
+        desiredEmitting = emitting;
+        emitDelayActive = false;
+        emitDelayTimer = 0f;
+        if (trailRenderer != null)
+        {
+            trailRenderer.emitting = emitting;
+            if (!emitting)
+            {
+                trailRenderer.Clear();
+                positionHistory.Clear();
+            }
+        }
     }
     
     private void SpawnCometParticle()

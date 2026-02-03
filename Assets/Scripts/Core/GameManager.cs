@@ -302,6 +302,7 @@ public class GameManager : MonoBehaviour
         }
         
         ball.Initialize(settings, null, freezeTime, maxBounces);
+        ball.SetShape(shape);
         ballSpawnIndex++; // Inkrementuj globalny licznik
         
         // Use cached position if fixedSpawnPosition is enabled, otherwise generate new random position
@@ -388,6 +389,7 @@ public class GameManager : MonoBehaviour
         }
         
         ball.Initialize(settings, color, freezeTime, maxBounces); // Pass specific color and limits
+        ball.SetShape(shape);
         
         ballObj.transform.position = new Vector3(position.x, position.y, 0);
         

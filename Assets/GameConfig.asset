@@ -18,27 +18,27 @@ MonoBehaviour:
   shapeType: 1
   ringRadius: 5
   ringThickness: 0.2
-  gapAngleDegrees: 30.84933
-  gapInitialAngle: 55.20939
-  rotationSpeed: -25.260353
-  ringColor: {r: 0.21751343, g: 0.27771714, b: 0.90402126, a: 1}
+  gapAngleDegrees: 39.262012
+  gapInitialAngle: 139.89212
+  rotationSpeed: -41.958176
+  ringColor: {r: 0.06788459, g: 0.11846347, b: 0.9220747, a: 1}
   shapeColorMinBrightness: 0.8
   shapeColorMinSaturation: 0.7
   ringVerticalOffset: -1.5
   ellipseWidthRadius: 3.5
   ellipseHeightRadius: 5
-  ballRadius: 0.24357364
+  ballRadius: 0.21167606
   bounciness: 1
   friction: 0
   freezeMode: 0
   ballFreezeTime: 1
-  ballMaxBounces: 4
+  ballMaxBounces: 1
   enableFreezeIncrementation: 1
   freezeIncrementStep: 1
   showCounter: 1
   ballColorMinBrightness: 0.8
   ballColorMinSaturation: 0.7
-  gravity: 15
+  gravity: -12
   gameOverAnimationDuration: 2
   recordingMode: 2
   autoStartRecording: 1
@@ -51,7 +51,7 @@ MonoBehaviour:
   spawnAngleMax: 135
   spawnRadiusPercent: 0.5
   escapeBuffer: 0.6
-  trailStyle: 3
-  trailTime: 0.14997947
-  trailWidthMultiplier: 0.43879884
+  trailStyle: 2
+  trailTime: 0.38791838
+  trailWidthMultiplier: 0.4513623
   ringParticleCount: 300

@@ -1,3 +1,5 @@
+using System.Collections;
+using System.IO;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -34,6 +36,10 @@ public class RecordingController : MonoBehaviour
     
     private float recordingStartTime;
     private string currentRecordingName;
+    
+    private const float WEBM_READY_TIMEOUT = 8f;
+    private const float WEBM_STABLE_TIME = 0.6f;
+    private const long WEBM_MIN_BYTES = 10 * 1024;
     
 #if UNITY_EDITOR
     private RecorderController recorderController;
@@ -136,8 +142,8 @@ public class RecordingController : MonoBehaviour
             $"BallGame_{timestamp}"
         );
         
-        // Audio - wyłączone (brak audio w grze)
-        movieRecorder.AudioInputSettings.PreserveAudio = false;
+        // Audio - włączone (freeze SFX w nagraniu)
+        movieRecorder.AudioInputSettings.PreserveAudio = true;
         
         // Dodaj recorder do kontrolera
         controllerSettings.AddRecorderSettings(movieRecorder);
@@ -224,12 +230,10 @@ public class RecordingController : MonoBehaviour
         {
             collisionRecorder.StopRecording();
         }
-        
+
         float duration = Time.time - recordingStartTime;
-        Debug.Log($"[Recording] ⏹ Stopped recording. Duration: {duration:F1}s");
-        Debug.Log($"[Recording] Files saved to: {outputFolder}/{currentRecordingName}.*");
-        
         isRecording = false;
+        StartCoroutine(FinalizeRecording(currentRecordingName, duration));
     }
     
     /// <summary>
@@ -252,6 +256,53 @@ public class RecordingController : MonoBehaviour
         if (isRecording)
         {
             StopRecording();
+        }
+    }
+    
+    private IEnumerator FinalizeRecording(string recordingName, float duration)
+    {
+        yield return WaitForWebMReady(recordingName);
+        Debug.Log($"[Recording] ⏹ Stopped recording. Duration: {duration:F1}s");
+        Debug.Log($"[Recording] Files saved to: {outputFolder}/{recordingName}.*");
+    }
+    
+    private IEnumerator WaitForWebMReady(string recordingName)
+    {
+        string basePath = Path.Combine(Application.dataPath, "..", outputFolder);
+        string webmPath = Path.Combine(basePath, $"{recordingName}.webm");
+        
+        float elapsed = 0f;
+        float stableTimer = 0f;
+        long lastSize = -1;
+        const float checkInterval = 0.25f;
+        
+        while (elapsed < WEBM_READY_TIMEOUT)
+        {
+            if (File.Exists(webmPath))
+            {
+                long size = new FileInfo(webmPath).Length;
+                if (size == lastSize && size > 0)
+                {
+                    stableTimer += checkInterval;
+                    if (stableTimer >= WEBM_STABLE_TIME)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    stableTimer = 0f;
+                    lastSize = size;
+                }
+            }
+            
+            yield return new WaitForSecondsRealtime(checkInterval);
+            elapsed += checkInterval;
+        }
+        
+        if (!File.Exists(webmPath) || new FileInfo(webmPath).Length < WEBM_MIN_BYTES)
+        {
+            Debug.LogWarning($"[Recording] WebM may be incomplete: {webmPath}");
         }
     }
     

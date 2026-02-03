@@ -1,6 +1,7 @@
+using System.Collections;
+using System.IO;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.IO;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -46,6 +47,10 @@ public class BatchRecordingController : MonoBehaviour
     private float roundStartTime;
     private string currentRecordingName;
     private bool hasAutoStarted = false;
+    
+    private const float WEBM_READY_TIMEOUT = 8f;
+    private const float WEBM_STABLE_TIME = 0.6f;
+    private const long WEBM_MIN_BYTES = 10 * 1024;
     
 #if UNITY_EDITOR
     private RecorderController recorderController;
@@ -213,7 +218,7 @@ public class BatchRecordingController : MonoBehaviour
             Codec = UnityEditor.Recorder.Encoder.CoreEncoderSettings.OutputCodec.WEBM
         };
         
-        movieRecorder.AudioInputSettings.PreserveAudio = false;
+        movieRecorder.AudioInputSettings.PreserveAudio = true;
         
         controllerSettings.AddRecorderSettings(movieRecorder);
         controllerSettings.SetRecordModeToManual();
@@ -409,15 +414,10 @@ public class BatchRecordingController : MonoBehaviour
         }
         
         isRecordingRound = false;
-        
-        if (!keepFiles && !string.IsNullOrEmpty(currentRecordingName))
+
+        if (!string.IsNullOrEmpty(currentRecordingName))
         {
-            DeleteRecordingFiles(currentRecordingName);
-        }
-        else if (keepFiles && !string.IsNullOrEmpty(currentRecordingName))
-        {
-            // Fix WebM metadata using ffmpeg (fast, just rewrites header)
-            FixWebMMetadata(currentRecordingName);
+            StartCoroutine(FinalizeRoundRecording(currentRecordingName, keepFiles));
         }
     }
     
@@ -473,6 +473,68 @@ public class BatchRecordingController : MonoBehaviour
                 try { File.Delete(tempPath); } catch { }
             }
             Debug.LogWarning($"[BatchRecording] ffmpeg not available or failed: {e.Message} - keeping original file");
+        }
+    }
+
+    private IEnumerator FinalizeRoundRecording(string recordingName, bool keepFiles)
+    {
+        yield return WaitForWebMReady(recordingName);
+        
+        if (!keepFiles)
+        {
+            DeleteRecordingFiles(recordingName);
+            yield break;
+        }
+        
+        string basePath = Path.Combine(Application.dataPath, "..", outputFolder);
+        string webmPath = Path.Combine(basePath, $"{recordingName}.webm");
+        if (!File.Exists(webmPath) || new FileInfo(webmPath).Length < WEBM_MIN_BYTES)
+        {
+            Debug.LogWarning($"[BatchRecording] WebM may be incomplete: {webmPath}");
+            yield break;
+        }
+        
+        // Fix WebM metadata using ffmpeg (fast, just rewrites header)
+        FixWebMMetadata(recordingName);
+    }
+    
+    private IEnumerator WaitForWebMReady(string recordingName)
+    {
+        string basePath = Path.Combine(Application.dataPath, "..", outputFolder);
+        string webmPath = Path.Combine(basePath, $"{recordingName}.webm");
+        
+        float elapsed = 0f;
+        float stableTimer = 0f;
+        long lastSize = -1;
+        const float checkInterval = 0.25f;
+        
+        while (elapsed < WEBM_READY_TIMEOUT)
+        {
+            if (File.Exists(webmPath))
+            {
+                long size = new FileInfo(webmPath).Length;
+                if (size == lastSize && size > 0)
+                {
+                    stableTimer += checkInterval;
+                    if (stableTimer >= WEBM_STABLE_TIME)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    stableTimer = 0f;
+                    lastSize = size;
+                }
+            }
+            
+            yield return new WaitForSecondsRealtime(checkInterval);
+            elapsed += checkInterval;
+        }
+        
+        if (!File.Exists(webmPath) || new FileInfo(webmPath).Length < WEBM_MIN_BYTES)
+        {
+            Debug.LogWarning($"[BatchRecording] WebM may be incomplete: {webmPath}");
         }
     }
     

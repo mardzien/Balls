@@ -148,6 +148,22 @@ public class GameSettings : ScriptableObject
     
     [Tooltip("Czy wyświetlać licznik wartości pod kształtem")]
     public bool showCounter = true;
+
+    [Tooltip("Czy natychmiastowo zamrażać piłki przy dotknięciu kształtu")]
+    public bool enableInstantFreezeOnShapeContact = true;
+
+    [Tooltip("Czy włączać efekt wizualny przy zamrożeniu (szary + lodowa obwódka)")]
+    public bool enableFreezeEffect = true;
+
+    [Tooltip("Czy obracać zamarznięte piłki razem z ruchem luki")]
+    public bool enableFrozenBallRotation = false;
+
+    [Tooltip("Dźwięk odtwarzany przy natychmiastowym zamrożeniu po dotknięciu kształtu")]
+    public AudioClip freezeCollisionClip;
+
+    [Tooltip("Głośność dźwięku zamrożenia (0-1)")]
+    [Range(0f, 1f)]
+    public float freezeCollisionVolume = 1f;
     
     [Tooltip("Minimalna jasność koloru kulki (HSV Value)")]
     [Range(0.5f, 1f)]

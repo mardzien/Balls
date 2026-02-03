@@ -16,6 +16,7 @@ public class Ball : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private BallTrailEffect trailEffect;
     private GameSettings settings;
+    private SpawnShape shape;
     
     // Freeze system
     private float lifeTimer = 0f;
@@ -25,6 +26,13 @@ public class Ball : MonoBehaviour
     private bool isFrozen = false;
     private bool canFreeze = true;
     private Color ballColor;
+    private float frozenAngle;
+    private float frozenRadiusRatio = 1f;
+    private bool hasFrozenOrbitData = false;
+    
+    // Freeze visual effect
+    private GameObject freezeEffectObj;
+    private SpriteRenderer freezeEffectRenderer;
     
     /// <summary>
     /// Event wywoływany przy kolizji z pierścieniem.
@@ -67,7 +75,15 @@ public class Ball : MonoBehaviour
     
     private void Update()
     {
-        if (isFrozen || settings == null || !canFreeze) return;
+        if (settings == null) return;
+
+        if (isFrozen)
+        {
+            UpdateFrozenOrbit();
+            return;
+        }
+
+        if (!canFreeze) return;
         
         // Sprawdzanie limitu czasu (tylko w trybie Time)
         if (settings.freezeMode == FreezeMode.Time)
@@ -115,6 +131,9 @@ public class Ball : MonoBehaviour
         maxLifeTime = freezeTime;
         currentBounces = 0;
         maxBounces = maxBouncesLimit;
+        hasFrozenOrbitData = false;
+        
+        ClearFreezeEffect();
         
         if (rb == null) rb = GetComponent<Rigidbody2D>();
         if (circleCollider == null) circleCollider = GetComponent<CircleCollider2D>();
@@ -169,6 +188,9 @@ public class Ball : MonoBehaviour
         {
             float trailWidth = settings.ballRadius * settings.trailWidthMultiplier;
             trailEffect.Initialize(settings.trailStyle, ballColor, settings.trailTime, trailWidth);
+            trailEffect.SetFrozen(false);
+            trailEffect.ClearTrail();
+            trailEffect.StartEmitDelay(0.15f);
         }
     }
     
@@ -188,26 +210,24 @@ public class Ball : MonoBehaviour
         if (isFrozen) return;
         
         isFrozen = true;
+        CacheFrozenOrbit();
         
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0f;
-            rb.bodyType = RigidbodyType2D.Static;
+            rb.bodyType = RigidbodyType2D.Kinematic;
         }
         
-        // Przyciemnij kolor zamrożonej kulki (zachowaj pełną alpha)
-        Color dimmedColor = ballColor * 0.8f;
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.color = new Color(dimmedColor.r, dimmedColor.g, dimmedColor.b, 1f);
-        }
+        ApplyFreezeVisuals();
         
         // Zaktualizuj trail effect - ustaw zamrożenie i kolor
         if (trailEffect != null)
         {
             trailEffect.SetFrozen(true);
-            trailEffect.UpdateColor(dimmedColor);
+            trailEffect.SetEmitting(false);
+            trailEffect.ClearTrail();
+            trailEffect.UpdateColor(spriteRenderer != null ? spriteRenderer.color : ballColor);
         }
         
         OnFrozen?.Invoke(this);
@@ -219,6 +239,14 @@ public class Ball : MonoBehaviour
     public void DisableFreezeTimer()
     {
         canFreeze = false;
+    }
+
+    /// <summary>
+    /// Przypisuje aktualny kształt spawnu (Ring/Ellipse).
+    /// </summary>
+    public void SetShape(SpawnShape spawnShape)
+    {
+        shape = spawnShape;
     }
     
     /// <summary>
@@ -242,6 +270,14 @@ public class Ball : MonoBehaviour
     {
         if (isFrozen) return;
         
+        if (settings != null && settings.enableInstantFreezeOnShapeContact &&
+            collision.collider != null && collision.collider.GetComponentInParent<SpawnShape>() != null)
+        {
+            PlayFreezeCollisionSfx();
+            Freeze();
+            return;
+        }
+        
         float relativeVelocity = collision.relativeVelocity.magnitude;
         OnBounce?.Invoke(relativeVelocity);
         
@@ -254,6 +290,103 @@ public class Ball : MonoBehaviour
             {
                 Freeze();
             }
+        }
+    }
+
+    private void PlayFreezeCollisionSfx()
+    {
+        if (settings == null || settings.freezeCollisionClip == null) return;
+        
+        AudioSource.PlayClipAtPoint(
+            settings.freezeCollisionClip,
+            transform.position,
+            settings.freezeCollisionVolume
+        );
+    }
+
+    private void CacheFrozenOrbit()
+    {
+        if (shape == null) return;
+        
+        Vector2 center = shape.Center;
+        Vector2 offset = (Vector2)transform.position - center;
+        frozenAngle = Mathf.Atan2(offset.y, offset.x) * Mathf.Rad2Deg;
+        
+        float radiusAtAngle = shape.GetRadiusAtAngle(frozenAngle);
+        float distance = offset.magnitude;
+        frozenRadiusRatio = radiusAtAngle > 0f ? Mathf.Clamp01(distance / radiusAtAngle) : 1f;
+        hasFrozenOrbitData = true;
+    }
+
+    private void UpdateFrozenOrbit()
+    {
+        if (shape == null || settings == null || !hasFrozenOrbitData) return;
+        if (!settings.enableFrozenBallRotation) return;
+        
+        frozenAngle += settings.rotationSpeed * Time.deltaTime;
+        frozenAngle %= 360f;
+        
+        float radiusAtAngle = shape.GetRadiusAtAngle(frozenAngle);
+        float distance = radiusAtAngle * frozenRadiusRatio;
+        float angleRad = frozenAngle * Mathf.Deg2Rad;
+        
+        Vector2 targetPos = shape.Center + new Vector2(
+            Mathf.Cos(angleRad) * distance,
+            Mathf.Sin(angleRad) * distance
+        );
+        
+        if (rb != null)
+        {
+            rb.position = targetPos;
+        }
+        else
+        {
+            transform.position = targetPos;
+        }
+    }
+
+    private void ApplyFreezeVisuals()
+    {
+        if (spriteRenderer == null) return;
+        
+        if (settings != null && settings.enableFreezeEffect)
+        {
+            Color frozenColor = Color.Lerp(ballColor, Color.gray, 0.7f);
+            spriteRenderer.color = new Color(frozenColor.r, frozenColor.g, frozenColor.b, 1f);
+            EnsureFreezeEffect();
+        }
+        else
+        {
+            Color dimmedColor = ballColor * 0.8f;
+            spriteRenderer.color = new Color(dimmedColor.r, dimmedColor.g, dimmedColor.b, 1f);
+        }
+    }
+
+    private void EnsureFreezeEffect()
+    {
+        if (freezeEffectObj != null) return;
+        
+        freezeEffectObj = new GameObject("FreezeEffect");
+        freezeEffectObj.transform.SetParent(transform, false);
+        freezeEffectObj.transform.localPosition = Vector3.zero;
+        freezeEffectObj.transform.localScale = Vector3.one * 1.15f;
+        
+        freezeEffectRenderer = freezeEffectObj.AddComponent<SpriteRenderer>();
+        freezeEffectRenderer.sprite = SpriteUtility.GetIceRingSprite();
+        freezeEffectRenderer.color = new Color(0.8f, 0.95f, 1f, 0.85f);
+        if (spriteRenderer != null)
+        {
+            freezeEffectRenderer.sortingOrder = spriteRenderer.sortingOrder + 1;
+        }
+    }
+
+    private void ClearFreezeEffect()
+    {
+        if (freezeEffectObj != null)
+        {
+            Destroy(freezeEffectObj);
+            freezeEffectObj = null;
+            freezeEffectRenderer = null;
         }
     }
 }

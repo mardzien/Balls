@@ -14,20 +14,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameSettings
   cameraOrthoSize: 10
   forceResolution: 1
-  gameMode: 0
-  shapeType: 1
+  gameMode: 2
+  ballClass1: 6
+  ballClass2: 3
+  duelRingCount: 3
+  duelRings:
+  - radius: 120
+    hp: 10
+  - radius: 200
+    hp: 25
+  - radius: 280
+    hp: 50
+  shapeType: 0
   ringRadius: 5
   ringThickness: 0.2
-  gapAngleDegrees: 39.262012
-  gapInitialAngle: 139.89212
-  rotationSpeed: -41.958176
-  ringColor: {r: 0.06788459, g: 0.11846347, b: 0.9220747, a: 1}
+  gapAngleDegrees: 33.95241
+  gapInitialAngle: 8.514619
+  rotationSpeed: -45.179962
+  ringColor: {r: 0.8268825, g: 0.08358498, b: 0.72623444, a: 1}
   shapeColorMinBrightness: 0.8
   shapeColorMinSaturation: 0.7
   ringVerticalOffset: -1.5
   ellipseWidthRadius: 3.5
   ellipseHeightRadius: 5
-  ballRadius: 0.21167606
+  ballRadius: 0.23973551
   bounciness: 1
   friction: 0
   freezeMode: 0
@@ -36,8 +46,13 @@ MonoBehaviour:
   enableFreezeIncrementation: 1
   freezeIncrementStep: 1
   showCounter: 1
-  ballColorMinBrightness: 0.8
-  ballColorMinSaturation: 0.7
+  enableInstantFreezeOnShapeContact: 1
+  enableFreezeEffect: 1
+  enableFrozenBallRotation: 0
+  freezeCollisionClip: {fileID: 8300000, guid: 932af54a4343c6b54a778dd061a99a1b, type: 3}
+  freezeCollisionVolume: 1
+  ballColorMinBrightness: 1
+  ballColorMinSaturation: 1
   gravity: -12
   gameOverAnimationDuration: 2
   recordingMode: 2
@@ -51,7 +66,7 @@ MonoBehaviour:
   spawnAngleMax: 135
   spawnRadiusPercent: 0.5
   escapeBuffer: 0.6
-  trailStyle: 2
-  trailTime: 0.38791838
-  trailWidthMultiplier: 0.4513623
+  trailStyle: 3
+  trailTime: 0.39272258
+  trailWidthMultiplier: 0.27989
   ringParticleCount: 300

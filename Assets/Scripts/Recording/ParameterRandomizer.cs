@@ -36,6 +36,7 @@ public class ParameterRandomizer : MonoBehaviour
     [Tooltip("Dozwolone tryby gry")]
     [SerializeField] private bool allowNormal = true;
     [SerializeField] private bool allowBattle = true;
+    [SerializeField] private bool allowDuelBreakout = false;
     
     [Header("Shape Type")]
     [Tooltip("Włącz losowanie typu kształtu")]
@@ -179,6 +180,7 @@ public class ParameterRandomizer : MonoBehaviour
         
         if (allowNormal) allowedModes.Add(GameMode.Normal);
         if (allowBattle) allowedModes.Add(GameMode.Battle);
+        if (allowDuelBreakout) allowedModes.Add(GameMode.DuelBreakout);
         
         if (allowedModes.Count == 0)
         {
@@ -244,6 +246,7 @@ public class ParameterRandomizer : MonoBehaviour
         randomizeGameMode = false;
         allowNormal = true;
         allowBattle = true;
+        allowDuelBreakout = false;
         
         randomizeShapeType = true;
         allowRing = true;

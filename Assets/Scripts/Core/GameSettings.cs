@@ -25,7 +25,8 @@ public enum RecordingMode
 public enum GameMode
 {
     Normal,         // Standardowa gra - 1 piłka
-    Battle          // Tryb bitwa - 2 piłki symetryczne
+    Battle,         // Tryb bitwa - 2 piłki symetryczne
+    DuelBreakout    // Tryb duel breakout - klasy piłek i wiele pierścieni HP
 }
 
 /// <summary>
@@ -35,6 +36,38 @@ public enum FreezeMode
 {
     Time,           // Zamrażanie po upływie czasu
     Bounces         // Zamrażanie po określonej liczbie odbić
+}
+
+/// <summary>
+/// Klasy piłek dla trybu Duel Breakout.
+/// </summary>
+public enum BallClassType
+{
+    Speedy,
+    Fibonacci,
+    Fractal,
+    Grower,
+    Berserker,
+    Sniper,
+    Combo,
+    Tank,
+    Ricochet,
+    FibSpeed,
+    Kolos,
+    Blitz
+}
+
+/// <summary>
+/// Konfiguracja jednego pierścienia w trybie Duel Breakout.
+/// </summary>
+[System.Serializable]
+public struct DuelRingConfig
+{
+    [Tooltip("Promien pierscienia")]
+    public float radius;
+
+    [Tooltip("Punkty zycia pierscienia")]
+    public float hp;
 }
 
 /// <summary>
@@ -72,8 +105,27 @@ public class GameSettings : ScriptableObject
     public bool forceResolution = true;
     
     [Header("Game Mode")]
-    [Tooltip("Tryb gry: Normal = 1 piłka, Battle = 2 piłki symetryczne")]
+    [Tooltip("Tryb gry: Normal = 1 piłka, Battle = 2 piłki symetryczne, DuelBreakout = klasy piłek + pierścienie HP")]
     public GameMode gameMode = GameMode.Normal;
+
+    [Header("Duel Breakout Settings")]
+    [Tooltip("Klasa piłki gracza 1")]
+    public BallClassType ballClass1 = BallClassType.Fibonacci;
+
+    [Tooltip("Klasa piłki gracza 2")]
+    public BallClassType ballClass2 = BallClassType.Speedy;
+
+    [Tooltip("Liczba pierścieni do przebicia (1-5)")]
+    [Range(1, 5)]
+    public int duelRingCount = 3;
+
+    [Tooltip("Konfiguracja pierścieni duel (radius + hp), od wewnętrznego do zewnętrznego")]
+    public DuelRingConfig[] duelRings = new DuelRingConfig[]
+    {
+        new DuelRingConfig { radius = 120f, hp = 10f },
+        new DuelRingConfig { radius = 200f, hp = 25f },
+        new DuelRingConfig { radius = 280f, hp = 50f },
+    };
     
     [Header("Shape Type")]
     [Tooltip("Typ kształtu spawnu (Ring lub Ellipse)")]
@@ -250,6 +302,17 @@ public class GameSettings : ScriptableObject
         
         // Game Mode
         gameMode = GameMode.Normal;
+
+        // Duel Breakout
+        ballClass1 = BallClassType.Fibonacci;
+        ballClass2 = BallClassType.Speedy;
+        duelRingCount = 3;
+        duelRings = new DuelRingConfig[]
+        {
+            new DuelRingConfig { radius = 120f, hp = 10f },
+            new DuelRingConfig { radius = 200f, hp = 25f },
+            new DuelRingConfig { radius = 280f, hp = 50f },
+        };
         
         // Shape Type
         shapeType = ShapeType.Ring;

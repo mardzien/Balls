@@ -239,6 +239,7 @@ public class Ball : MonoBehaviour
     public void DisableFreezeTimer()
     {
         canFreeze = false;
+        currentBounces = 0;
     }
 
     /// <summary>
@@ -270,7 +271,7 @@ public class Ball : MonoBehaviour
     {
         if (isFrozen) return;
         
-        if (settings != null && settings.enableInstantFreezeOnShapeContact &&
+        if (canFreeze && settings != null && settings.enableInstantFreezeOnShapeContact &&
             collision.collider != null && collision.collider.GetComponentInParent<SpawnShape>() != null)
         {
             PlayFreezeCollisionSfx();
@@ -282,7 +283,7 @@ public class Ball : MonoBehaviour
         OnBounce?.Invoke(relativeVelocity);
         
         // Sprawdzanie limitu odbić (tylko w trybie Bounces)
-        if (settings != null && settings.freezeMode == FreezeMode.Bounces)
+        if (canFreeze && settings != null && settings.freezeMode == FreezeMode.Bounces)
         {
             currentBounces++;
             
